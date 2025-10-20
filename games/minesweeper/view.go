@@ -28,7 +28,7 @@ func (m Model) View() string {
 func (m Model) renderMenu() string {
 	var b strings.Builder
 
-	b.WriteString(titleStyle.Render("💣 MINESWEEPER 💣"))
+	b.WriteString(titleStyle.Render("* * * MINESWEEPER * * *"))
 	b.WriteString("\n\n")
 
 	menu := `
@@ -69,7 +69,7 @@ func (m Model) renderGame() string {
 	}
 
 	// Title
-	title := titleStyle.Width(m.termWidth).Render("💣 MINESWEEPER 💣")
+	title := titleStyle.Width(m.termWidth).Render("* * * MINESWEEPER * * *")
 	b.WriteString(title)
 	b.WriteString("\n\n")
 
@@ -136,16 +136,16 @@ func (m Model) renderCell(cell Cell, isCursor bool) string {
 	var style lipgloss.Style
 
 	if cell.IsFlagged && !cell.IsRevealed {
-		symbol = "🚩"
+		symbol = "P" // P for "possible mine" or flag
 		style = flagCellStyle
 	} else if !cell.IsRevealed {
-		symbol = "□"
+		symbol = "■" // Solid block for unrevealed
 		style = unknownCellStyle
 	} else if cell.IsMine {
-		symbol = "💣"
+		symbol = "*" // Asterisk for mine
 		style = mineCellStyle
 	} else if cell.Adjacent == 0 {
-		symbol = " "
+		symbol = "·" // Middle dot for empty revealed cell
 		style = revealedCellStyle
 	} else {
 		symbol = fmt.Sprintf("%d", cell.Adjacent)
