@@ -50,29 +50,32 @@ func (m Model) handleMenuClick(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 
 // mouseToGrid converts terminal coordinates to grid coordinates
 func (m Model) mouseToGrid(mouseX, mouseY int) (gridX, gridY int, inBounds bool) {
-	// Calculate the grid's screen position
-	// Each cell is 2 characters wide (to make it more square-looking)
-	// The grid is centered on screen
+	// Match the rendering logic from renderGame()
 
-	cellWidth := 2
-	cellHeight := 1
+	// Calculate vertical position
+	totalLines := 3 + 2 + m.height + 4 + 2 // title + gap + grid + gap + help
+	topPadding := (m.termHeight - totalLines) / 2
+	if topPadding < 0 {
+		topPadding = 0
+	}
 
-	// Calculate grid offset to center it
-	gridPixelWidth := m.width * cellWidth
-	gridPixelHeight := m.height * cellHeight
+	// Grid starts after: topPadding + title(1) + gap(2) + stats(1) + gap(2)
+	gridStartY := topPadding + 1 + 2 + 1 + 2
 
-	offsetX := (m.termWidth - gridPixelWidth) / 2
-	offsetY := (m.termHeight - gridPixelHeight) / 2
-
-	// Account for header (title + stats line = ~6 lines)
-	offsetY += 6
+	// Calculate horizontal position
+	gridWidth := m.width * 2 // Each cell is roughly 2 chars
+	leftPadding := (m.termWidth - gridWidth) / 2
+	if leftPadding < 0 {
+		leftPadding = 0
+	}
 
 	// Convert mouse position to grid position
-	relX := mouseX - offsetX
-	relY := mouseY - offsetY
+	relX := mouseX - leftPadding
+	relY := mouseY - gridStartY
 
-	gridX = relX / cellWidth
-	gridY = relY / cellHeight
+	// Each cell is 2 characters wide (symbol + space)
+	gridX = relX / 2
+	gridY = relY
 
 	// Check bounds
 	inBounds = gridX >= 0 && gridX < m.width && gridY >= 0 && gridY < m.height

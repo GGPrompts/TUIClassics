@@ -56,39 +56,59 @@ Select Difficulty:
 func (m Model) renderGame() string {
 	var b strings.Builder
 
+	// Calculate vertical centering
+	totalLines := 3 + 2 + m.height + 4 + 2 // title + gap + grid + gap + help
+	topPadding := (m.termHeight - totalLines) / 2
+	if topPadding < 0 {
+		topPadding = 0
+	}
+
+	// Add top padding
+	for i := 0; i < topPadding; i++ {
+		b.WriteString("\n")
+	}
+
 	// Title
-	title := titleStyle.Render("💣 MINESWEEPER 💣")
+	title := titleStyle.Width(m.termWidth).Render("💣 MINESWEEPER 💣")
 	b.WriteString(title)
 	b.WriteString("\n\n")
 
 	// Stats line
 	config := difficultyConfigs[m.difficulty]
 	stats := fmt.Sprintf(
-		"💣 Mines: %d/%d  |  ⏱️  %s  |  🚩 Flags: %d",
+		"Mines: %d/%d  |  Time: %s  |  Flags: %d",
 		m.mineCount,
 		config.mineCount,
 		formatDuration(m.elapsedTime),
 		m.flagsPlaced,
 	)
-	b.WriteString(statsStyle.Render(stats))
+	b.WriteString(statsStyle.Width(m.termWidth).Render(stats))
 	b.WriteString("\n\n")
 
-	// Grid
+	// Grid (with calculated horizontal centering)
 	grid := m.renderGrid()
-	b.WriteString(gridBorderStyle.Render(grid))
-	b.WriteString("\n\n")
+	gridWidth := m.width * 2 // Each cell is roughly 2 chars
+	leftPadding := (m.termWidth - gridWidth) / 2
+	if leftPadding < 0 {
+		leftPadding = 0
+	}
+
+	// Render grid with padding
+	gridLines := strings.Split(grid, "\n")
+	for _, line := range gridLines {
+		if line != "" {
+			b.WriteString(strings.Repeat(" ", leftPadding))
+			b.WriteString(line)
+			b.WriteString("\n")
+		}
+	}
+	b.WriteString("\n")
 
 	// Help text
-	help := "Left-click: Reveal  |  Right-click: Flag  |  [N] New Game  |  [Q] Quit"
-	b.WriteString(helpStyle.Render(help))
+	help := "Left-click: Reveal  |  Right-click/[F]: Flag  |  Arrow keys: Move  |  [N] New  |  [Q] Quit"
+	b.WriteString(helpStyle.Width(m.termWidth).Render(help))
 
-	return lipgloss.Place(
-		m.termWidth,
-		m.termHeight,
-		lipgloss.Center,
-		lipgloss.Center,
-		b.String(),
-	)
+	return b.String()
 }
 
 // renderGrid renders the minesweeper grid
@@ -144,54 +164,92 @@ func (m Model) renderCell(cell Cell, isCursor bool) string {
 func (m Model) renderWin() string {
 	var b strings.Builder
 
-	b.WriteString(winStyle.Render("🎉 YOU WIN! 🎉"))
+	// Calculate vertical centering
+	totalLines := 1 + 2 + m.height + 2 + 1 + 2 + 1
+	topPadding := (m.termHeight - totalLines) / 2
+	if topPadding < 0 {
+		topPadding = 0
+	}
+
+	for i := 0; i < topPadding; i++ {
+		b.WriteString("\n")
+	}
+
+	b.WriteString(winStyle.Width(m.termWidth).Render("🎉 YOU WIN! 🎉"))
 	b.WriteString("\n\n")
 
+	// Grid with padding
 	grid := m.renderGrid()
-	b.WriteString(gridBorderStyle.Render(grid))
-	b.WriteString("\n\n")
+	gridWidth := m.width * 2
+	leftPadding := (m.termWidth - gridWidth) / 2
+	if leftPadding < 0 {
+		leftPadding = 0
+	}
+
+	gridLines := strings.Split(grid, "\n")
+	for _, line := range gridLines {
+		if line != "" {
+			b.WriteString(strings.Repeat(" ", leftPadding))
+			b.WriteString(line)
+			b.WriteString("\n")
+		}
+	}
+	b.WriteString("\n")
 
 	stats := fmt.Sprintf(
 		"Time: %s  |  Best: %s",
 		formatDuration(m.elapsedTime),
 		formatDuration(m.bestTime),
 	)
-	b.WriteString(statsStyle.Render(stats))
+	b.WriteString(statsStyle.Width(m.termWidth).Render(stats))
 	b.WriteString("\n\n")
 
 	help := "[R] Restart  |  [N] New Game  |  [Q] Quit"
-	b.WriteString(helpStyle.Render(help))
+	b.WriteString(helpStyle.Width(m.termWidth).Render(help))
 
-	return lipgloss.Place(
-		m.termWidth,
-		m.termHeight,
-		lipgloss.Center,
-		lipgloss.Center,
-		b.String(),
-	)
+	return b.String()
 }
 
 // renderLoss renders the loss screen
 func (m Model) renderLoss() string {
 	var b strings.Builder
 
-	b.WriteString(loseStyle.Render("💥 GAME OVER 💥"))
+	// Calculate vertical centering
+	totalLines := 1 + 2 + m.height + 2 + 1
+	topPadding := (m.termHeight - totalLines) / 2
+	if topPadding < 0 {
+		topPadding = 0
+	}
+
+	for i := 0; i < topPadding; i++ {
+		b.WriteString("\n")
+	}
+
+	b.WriteString(loseStyle.Width(m.termWidth).Render("💥 GAME OVER 💥"))
 	b.WriteString("\n\n")
 
+	// Grid with padding
 	grid := m.renderGrid()
-	b.WriteString(gridBorderStyle.Render(grid))
-	b.WriteString("\n\n")
+	gridWidth := m.width * 2
+	leftPadding := (m.termWidth - gridWidth) / 2
+	if leftPadding < 0 {
+		leftPadding = 0
+	}
+
+	gridLines := strings.Split(grid, "\n")
+	for _, line := range gridLines {
+		if line != "" {
+			b.WriteString(strings.Repeat(" ", leftPadding))
+			b.WriteString(line)
+			b.WriteString("\n")
+		}
+	}
+	b.WriteString("\n")
 
 	help := "[R] Restart  |  [N] New Game  |  [Q] Quit"
-	b.WriteString(helpStyle.Render(help))
+	b.WriteString(helpStyle.Width(m.termWidth).Render(help))
 
-	return lipgloss.Place(
-		m.termWidth,
-		m.termHeight,
-		lipgloss.Center,
-		lipgloss.Center,
-		b.String(),
-	)
+	return b.String()
 }
 
 // formatDuration formats a duration as MM:SS

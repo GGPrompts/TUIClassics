@@ -60,6 +60,10 @@ type Model struct {
 	cursorX    int // For keyboard navigation
 	cursorY    int
 
+	// Grid rendering boundaries (calculated during View())
+	gridStartX int
+	gridStartY int
+
 	// High scores
 	bestTime time.Duration
 }
