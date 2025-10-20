@@ -1,0 +1,45 @@
+========================================
+QUICK START PROMPT FOR SOLITAIRE
+========================================
+
+Copy-paste this into your next Claude session:
+
+---
+
+I'm working on TUIClassics at ~/projects/TUIClassics. Minesweeper is complete (v0.1.0), and I want to implement Solitaire (Klondike) next.
+
+Please read these files first for context:
+1. PLAN.md (Phase 2 has detailed Solitaire specs)
+2. CLAUDE.md (critical patterns from Minesweeper)
+3. docs/SOLITAIRE_PROMPT.md (comprehensive implementation guide)
+
+Key requirements:
+- Standard Klondike Solitaire
+- Mouse drag-and-drop + keyboard controls
+- Unicode card rendering (♠ ♥ ♦ ♣, ranks A-K)
+- Waterfall animation on win (physics-based, 60fps)
+- Follow TUITemplate 9-file modular architecture
+
+Critical from Minesweeper:
+- Use single-width Unicode symbols for cards (NOT emoji 🂡🂢)
+- Mouse coordinates must exactly match rendering
+- Animation pattern: AnimationTickMsg with tea.Tick()
+
+Before starting, ask me:
+1. Draw-1 or Draw-3 mode first?
+2. Should undo be in Phase 1 or polish phase?
+3. Do I want Windows Solitaire scoring?
+4. Track statistics now or later?
+
+Then implement in phases:
+Phase 1: Core structure, card dealing, basic rendering
+Phase 2: Validation, keyboard controls
+Phase 3: Mouse drag-and-drop
+Phase 4: Waterfall animation
+Phase 5: Polish (undo, modes, stats)
+
+Ready to start building Solitaire! 🎴
+
+---
+
+That's it! Just copy the section above.
