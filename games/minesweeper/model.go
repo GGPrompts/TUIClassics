@@ -116,10 +116,23 @@ func (m *Model) RevealCell(x, y int) {
 	cell.IsRevealed = true
 	m.cellsRevealed++
 
-	// Hit a mine - game over
+	// Hit a mine - start explosion animation
 	if cell.IsMine {
-		m.state = StateLost
-		m.revealAllMines()
+		m.state = StateExploding
+		m.explosionCenterX = x
+		m.explosionCenterY = y
+		m.explosionRadius = 0
+
+		// Calculate max steps based on grid size (max distance from any corner)
+		maxDist := 0
+		corners := [][2]int{{0, 0}, {m.width - 1, 0}, {0, m.height - 1}, {m.width - 1, m.height - 1}}
+		for _, corner := range corners {
+			dist := abs(corner[0]-x) + abs(corner[1]-y) // Manhattan distance
+			if dist > maxDist {
+				maxDist = dist
+			}
+		}
+		m.explosionMaxSteps = maxDist + 3 // A few extra frames for effect
 		return
 	}
 
@@ -186,4 +199,38 @@ func (m *Model) checkWinCondition() {
 			m.bestTime = m.elapsedTime
 		}
 	}
+}
+
+// progressExplosion advances the explosion animation by one frame
+func (m *Model) progressExplosion() {
+	m.explosionRadius++
+
+	// Reveal mines within the current explosion radius
+	for y := 0; y < m.height; y++ {
+		for x := 0; x < m.width; x++ {
+			if m.grid[y][x].IsMine {
+				// Calculate Manhattan distance from explosion center
+				dist := abs(x-m.explosionCenterX) + abs(y-m.explosionCenterY)
+
+				// Reveal if within current radius
+				if dist <= m.explosionRadius {
+					m.grid[y][x].IsRevealed = true
+				}
+			}
+		}
+	}
+
+	// End animation when complete
+	if m.explosionRadius >= m.explosionMaxSteps {
+		m.state = StateLost
+		m.revealAllMines() // Ensure all mines are revealed
+	}
+}
+
+// abs returns the absolute value of an integer
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
 }

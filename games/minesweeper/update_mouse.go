@@ -24,6 +24,10 @@ func (m Model) handleMouseEvent(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 	case tea.MouseButtonLeft:
 		if msg.Action == tea.MouseActionPress {
 			m.RevealCell(gridX, gridY)
+			// If explosion animation started, begin animation ticks
+			if m.state == StateExploding {
+				return m, animationTick()
+			}
 		}
 
 	case tea.MouseButtonRight:

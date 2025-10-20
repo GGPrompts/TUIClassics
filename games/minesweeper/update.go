@@ -31,6 +31,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tick()
 		}
 		return m, nil
+
+	case AnimationTickMsg:
+		if m.state == StateExploding {
+			m.progressExplosion()
+			if m.state == StateExploding {
+				// Still animating, schedule next frame
+				return m, animationTick()
+			}
+		}
+		return m, nil
 	}
 
 	return m, nil
@@ -100,6 +110,10 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// Reveal cell at cursor
 		if m.state == StatePlaying {
 			m.RevealCell(m.cursorX, m.cursorY)
+			// If explosion animation started, begin animation ticks
+			if m.state == StateExploding {
+				return m, animationTick()
+			}
 		}
 
 	case "f":

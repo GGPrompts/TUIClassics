@@ -25,6 +25,7 @@ const (
 	StateWon                      // Player won
 	StateLost                     // Player hit a mine
 	StatePaused                   // Game paused
+	StateExploding                // Explosion animation in progress
 )
 
 // Cell represents a single cell in the minesweeper grid
@@ -64,6 +65,12 @@ type Model struct {
 	gridStartX int
 	gridStartY int
 
+	// Animation state
+	explosionCenterX  int // X coordinate of clicked mine
+	explosionCenterY  int // Y coordinate of clicked mine
+	explosionRadius   int // Current explosion radius
+	explosionMaxSteps int // Total animation steps
+
 	// High scores
 	bestTime time.Duration
 }
@@ -83,9 +90,19 @@ var difficultyConfigs = map[Difficulty]struct {
 // TickMsg is sent every second to update the timer
 type TickMsg time.Time
 
+// AnimationTickMsg is sent for explosion animation frames
+type AnimationTickMsg time.Time
+
 // Timer command that sends TickMsg every second
 func tick() tea.Cmd {
 	return tea.Tick(time.Second, func(t time.Time) tea.Msg {
 		return TickMsg(t)
+	})
+}
+
+// Animation command that sends AnimationTickMsg for explosion animation
+func animationTick() tea.Cmd {
+	return tea.Tick(80*time.Millisecond, func(t time.Time) tea.Msg {
+		return AnimationTickMsg(t)
 	})
 }

@@ -15,6 +15,8 @@ func (m Model) View() string {
 		return m.renderMenu()
 	case StatePlaying:
 		return m.renderGame()
+	case StateExploding:
+		return m.renderExplosion()
 	case StateWon:
 		return m.renderWin()
 	case StateLost:
@@ -82,7 +84,7 @@ func (m Model) renderGame() string {
 		formatDuration(m.elapsedTime),
 		m.flagsPlaced,
 	)
-	b.WriteString(statsStyle.Width(m.termWidth).Render(stats))
+	b.WriteString(statsStyle.Width(m.termWidth).Align(lipgloss.Center).Render(stats))
 	b.WriteString("\n\n")
 
 	// Grid (with calculated horizontal centering)
@@ -111,6 +113,127 @@ func (m Model) renderGame() string {
 	return b.String()
 }
 
+// renderExplosion renders the explosion animation
+func (m Model) renderExplosion() string {
+	var b strings.Builder
+
+	// Calculate vertical centering
+	totalLines := 3 + 2 + m.height + 4 + 2
+	topPadding := (m.termHeight - totalLines) / 2
+	if topPadding < 0 {
+		topPadding = 0
+	}
+
+	for i := 0; i < topPadding; i++ {
+		b.WriteString("\n")
+	}
+
+	// Title with explosion effect
+	title := titleStyle.Width(m.termWidth).Render("* * * BOOM! * * *")
+	b.WriteString(title)
+	b.WriteString("\n\n")
+
+	// Stats line
+	config := difficultyConfigs[m.difficulty]
+	stats := fmt.Sprintf(
+		"Mines: %d/%d  |  Time: %s  |  Flags: %d",
+		m.mineCount,
+		config.mineCount,
+		formatDuration(m.elapsedTime),
+		m.flagsPlaced,
+	)
+	b.WriteString(statsStyle.Width(m.termWidth).Align(lipgloss.Center).Render(stats))
+	b.WriteString("\n\n")
+
+	// Grid with explosion effect
+	grid := m.renderExplosionGrid()
+	gridWidth := m.width * 2
+	leftPadding := (m.termWidth - gridWidth) / 2
+	if leftPadding < 0 {
+		leftPadding = 0
+	}
+
+	gridLines := strings.Split(grid, "\n")
+	for _, line := range gridLines {
+		if line != "" {
+			b.WriteString(strings.Repeat(" ", leftPadding))
+			b.WriteString(line)
+			b.WriteString("\n")
+		}
+	}
+	b.WriteString("\n")
+
+	// Help text
+	help := fmt.Sprintf("Explosion expanding... (radius: %d)", m.explosionRadius)
+	b.WriteString(helpStyle.Width(m.termWidth).Align(lipgloss.Center).Render(help))
+
+	return b.String()
+}
+
+// renderExplosionGrid renders the grid during explosion animation
+func (m Model) renderExplosionGrid() string {
+	var b strings.Builder
+
+	for y := 0; y < m.height; y++ {
+		for x := 0; x < m.width; x++ {
+			cell := m.grid[y][x]
+			dist := abs(x-m.explosionCenterX) + abs(y-m.explosionCenterY)
+
+			var symbol string
+			var style lipgloss.Style
+
+			// Show explosion wave effect
+			if dist == m.explosionRadius && cell.IsMine {
+				// Mines at current explosion radius show as exploding
+				symbol = "+"
+				style = mineCellStyle.Copy().Blink(true)
+			} else if dist < m.explosionRadius && cell.IsMine && cell.IsRevealed {
+				// Already revealed mines
+				symbol = "*"
+				style = mineCellStyle
+			} else {
+				// Regular cell rendering
+				symbol, style = m.getCellSymbolAndStyle(cell, false)
+			}
+
+			b.WriteString(style.Render(symbol))
+			b.WriteString(" ")
+		}
+		b.WriteString("\n")
+	}
+
+	return b.String()
+}
+
+// getCellSymbolAndStyle returns the symbol and style for a cell
+func (m Model) getCellSymbolAndStyle(cell Cell, isCursor bool) (string, lipgloss.Style) {
+	var symbol string
+	var style lipgloss.Style
+
+	if cell.IsFlagged && !cell.IsRevealed {
+		symbol = "P"
+		style = flagCellStyle
+	} else if !cell.IsRevealed {
+		symbol = "■"
+		style = unknownCellStyle
+	} else if cell.IsMine {
+		symbol = "*"
+		style = mineCellStyle
+	} else if cell.Adjacent == 0 {
+		symbol = "·"
+		style = revealedCellStyle
+	} else {
+		symbol = fmt.Sprintf("%d", cell.Adjacent)
+		style = getNumberStyle(cell.Adjacent)
+	}
+
+	if isCursor && !cell.IsRevealed {
+		style = cursorCellStyle
+	}
+
+	return symbol, style
+}
+
 // renderGrid renders the minesweeper grid
 func (m Model) renderGrid() string {
 	var b strings.Builder
@@ -132,31 +255,7 @@ func (m Model) renderGrid() string {
 
 // renderCell renders a single cell
 func (m Model) renderCell(cell Cell, isCursor bool) string {
-	var symbol string
-	var style lipgloss.Style
-
-	if cell.IsFlagged && !cell.IsRevealed {
-		symbol = "P" // P for "possible mine" or flag
-		style = flagCellStyle
-	} else if !cell.IsRevealed {
-		symbol = "■" // Solid block for unrevealed
-		style = unknownCellStyle
-	} else if cell.IsMine {
-		symbol = "*" // Asterisk for mine
-		style = mineCellStyle
-	} else if cell.Adjacent == 0 {
-		symbol = "·" // Middle dot for empty revealed cell
-		style = revealedCellStyle
-	} else {
-		symbol = fmt.Sprintf("%d", cell.Adjacent)
-		style = getNumberStyle(cell.Adjacent)
-	}
-
-	// Apply cursor highlight
-	if isCursor && !cell.IsRevealed {
-		style = cursorCellStyle
-	}
-
+	symbol, style := m.getCellSymbolAndStyle(cell, isCursor)
 	return style.Render(symbol)
 }
 
