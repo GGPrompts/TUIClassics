@@ -272,27 +272,21 @@ func (m Model) renderCell(cell Cell, isCursor bool) string {
 // renderSmiley renders the clickable smiley face button
 func (m Model) renderSmiley() string {
 	var face string
-	var style lipgloss.Style
 
 	switch m.smileyState {
 	case SmileyHappy:
-		face = "[ :) ]"
-		style = lipgloss.NewStyle().Foreground(colorSuccess).Bold(true)
+		face = "🙂"  // Slightly smiling face
 	case SmileySurprised:
-		face = "[ :O ]"
-		style = lipgloss.NewStyle().Foreground(colorWarning).Bold(true)
+		face = "😮"  // Face with open mouth
 	case SmileyDead:
-		face = "[X_X]"
-		style = lipgloss.NewStyle().Foreground(colorError).Bold(true)
+		face = "😵"  // Dizzy/dead face
 	case SmileyCool:
-		face = "[ 8) ]"
-		style = lipgloss.NewStyle().Foreground(colorTitle).Bold(true)
+		face = "😎"  // Smiling face with sunglasses (winner!)
 	default:
-		face = "[ :) ]"
-		style = lipgloss.NewStyle().Foreground(colorSuccess).Bold(true)
+		face = "🙂"
 	}
 
-	return style.Render(face)
+	return face
 }
 
 // renderWin renders the win screen

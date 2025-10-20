@@ -111,7 +111,7 @@ func (m Model) isSmileyClicked(mouseX, mouseY int) bool {
 	// Smiley is rendered at:
 	// topPadding + title(1) + \n\n(2) = topPadding + 3
 
-	totalLines := 3 + 2 + m.height + 4 + 2
+	totalLines := 3 + 2 + 1 + 2 + m.height + 4 + 2
 	topPadding := (m.termHeight - totalLines) / 2
 	if topPadding < 0 {
 		topPadding = 0
@@ -119,10 +119,10 @@ func (m Model) isSmileyClicked(mouseX, mouseY int) bool {
 
 	smileyY := topPadding + 3
 
-	// Smiley is "[ :) ]" = 6 chars wide, centered
-	smileyWidth := 6
-	smileyX := (m.termWidth - smileyWidth) / 2
+	// Emoji is ~2 chars wide, but give a clickable area of 4 chars for easier clicking
+	clickableWidth := 4
+	smileyX := (m.termWidth - clickableWidth) / 2
 
 	// Check if click is within smiley bounds
-	return mouseY == smileyY && mouseX >= smileyX && mouseX < smileyX+smileyWidth
+	return mouseY == smileyY && mouseX >= smileyX && mouseX < smileyX+clickableWidth
 }
