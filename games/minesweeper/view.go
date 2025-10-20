@@ -59,7 +59,7 @@ func (m Model) renderGame() string {
 	var b strings.Builder
 
 	// Calculate vertical centering
-	totalLines := 3 + 2 + m.height + 4 + 2 // title + gap + grid + gap + help
+	totalLines := 3 + 2 + 1 + 2 + m.height + 4 + 2 // title + gap + smiley + gap + grid + gap + help
 	topPadding := (m.termHeight - totalLines) / 2
 	if topPadding < 0 {
 		topPadding = 0
@@ -73,6 +73,11 @@ func (m Model) renderGame() string {
 	// Title
 	title := titleStyle.Width(m.termWidth).Render("* * * MINESWEEPER * * *")
 	b.WriteString(title)
+	b.WriteString("\n\n")
+
+	// Smiley face button (clickable to restart)
+	smiley := m.renderSmiley()
+	b.WriteString(lipgloss.NewStyle().Width(m.termWidth).Align(lipgloss.Center).Render(smiley))
 	b.WriteString("\n\n")
 
 	// Stats line
@@ -118,7 +123,7 @@ func (m Model) renderExplosion() string {
 	var b strings.Builder
 
 	// Calculate vertical centering
-	totalLines := 3 + 2 + m.height + 4 + 2
+	totalLines := 3 + 2 + 1 + 2 + m.height + 4 + 2 // title + gap + smiley + gap + grid + gap + help
 	topPadding := (m.termHeight - totalLines) / 2
 	if topPadding < 0 {
 		topPadding = 0
@@ -131,6 +136,11 @@ func (m Model) renderExplosion() string {
 	// Title with explosion effect
 	title := titleStyle.Width(m.termWidth).Render("* * * BOOM! * * *")
 	b.WriteString(title)
+	b.WriteString("\n\n")
+
+	// Smiley face (dead during explosion)
+	smiley := m.renderSmiley()
+	b.WriteString(lipgloss.NewStyle().Width(m.termWidth).Align(lipgloss.Center).Render(smiley))
 	b.WriteString("\n\n")
 
 	// Stats line
@@ -257,6 +267,32 @@ func (m Model) renderGrid() string {
 func (m Model) renderCell(cell Cell, isCursor bool) string {
 	symbol, style := m.getCellSymbolAndStyle(cell, isCursor)
 	return style.Render(symbol)
+}
+
+// renderSmiley renders the clickable smiley face button
+func (m Model) renderSmiley() string {
+	var face string
+	var style lipgloss.Style
+
+	switch m.smileyState {
+	case SmileyHappy:
+		face = "[ :) ]"
+		style = lipgloss.NewStyle().Foreground(colorSuccess).Bold(true)
+	case SmileySurprised:
+		face = "[ :O ]"
+		style = lipgloss.NewStyle().Foreground(colorWarning).Bold(true)
+	case SmileyDead:
+		face = "[X_X]"
+		style = lipgloss.NewStyle().Foreground(colorError).Bold(true)
+	case SmileyCool:
+		face = "[ 8) ]"
+		style = lipgloss.NewStyle().Foreground(colorTitle).Bold(true)
+	default:
+		face = "[ :) ]"
+		style = lipgloss.NewStyle().Foreground(colorSuccess).Bold(true)
+	}
+
+	return style.Render(face)
 }
 
 // renderWin renders the win screen

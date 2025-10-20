@@ -28,6 +28,16 @@ const (
 	StateExploding                // Explosion animation in progress
 )
 
+// SmileyState represents the smiley face button state
+type SmileyState int
+
+const (
+	SmileyHappy SmileyState = iota     // :) - Normal playing
+	SmileySurprised                    // :O - Mouse down on cell
+	SmileyDead                         // X_X - Hit a mine
+	SmileyCool                         // B) - Won the game
+)
+
 // Cell represents a single cell in the minesweeper grid
 type Cell struct {
 	IsMine      bool // Is this cell a mine?
@@ -70,6 +80,9 @@ type Model struct {
 	explosionCenterY  int // Y coordinate of clicked mine
 	explosionRadius   int // Current explosion radius
 	explosionMaxSteps int // Total animation steps
+
+	// UI state
+	smileyState SmileyState // Current smiley face state
 
 	// High scores
 	bestTime time.Duration

@@ -35,6 +35,7 @@ func (m *Model) InitGame() {
 	m.firstClick = true
 	m.cursorX = 0
 	m.cursorY = 0
+	m.smileyState = SmileyHappy
 }
 
 // PlaceMines randomly places mines on the grid, avoiding the first clicked cell
@@ -119,6 +120,7 @@ func (m *Model) RevealCell(x, y int) {
 	// Hit a mine - start explosion animation
 	if cell.IsMine {
 		m.state = StateExploding
+		m.smileyState = SmileyDead  // Change face to dead
 		m.explosionCenterX = x
 		m.explosionCenterY = y
 		m.explosionRadius = 0
@@ -192,6 +194,7 @@ func (m *Model) checkWinCondition() {
 
 	if m.cellsRevealed == safeCells {
 		m.state = StateWon
+		m.smileyState = SmileyCool  // Change face to cool (won!)
 		m.elapsedTime = time.Since(m.startTime)
 
 		// Update best time if this is better
