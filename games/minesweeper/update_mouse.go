@@ -59,8 +59,11 @@ func (m Model) mouseToGrid(mouseX, mouseY int) (gridX, gridY int, inBounds bool)
 		topPadding = 0
 	}
 
-	// Grid starts after: topPadding + title(1) + gap(2) + stats(1) + gap(2)
-	gridStartY := topPadding + 1 + 2 + 1 + 2
+	// Grid starts after: topPadding + title line + "\n\n" (2) + stats line + "\n\n" (2)
+	// Line topPadding: title
+	// Line topPadding+2: stats (after \n\n)
+	// Line topPadding+4: grid starts (after \n\n)
+	gridStartY := topPadding + 4
 
 	// Calculate horizontal position
 	gridWidth := m.width * 2 // Each cell is roughly 2 chars
