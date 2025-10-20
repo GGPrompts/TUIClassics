@@ -43,69 +43,76 @@ Bring classic Windows 95/XP games to the terminal with:
 
 **Priority**: High - Most requested classic game after Minesweeper
 
+**Current Status** (2025-01-20): ~85% complete, debugging mouse drag-and-drop
+
 ### Core Gameplay
 
-- [ ] Standard Klondike Solitaire rules
-- [ ] 7 tableau columns (1-7 cards)
-- [ ] 4 foundation piles (Ace to King, by suit)
-- [ ] Stock pile (draw cards)
-- [ ] Waste pile (drawn cards)
-- [ ] Draw-1 and Draw-3 modes
+- [x] Standard Klondike Solitaire rules
+- [x] 7 tableau columns (1-7 cards)
+- [x] 4 foundation piles (Ace to King, by suit)
+- [x] Stock pile (draw cards)
+- [x] Waste pile (drawn cards)
+- [x] Draw-1 mode (working)
+- [ ] Draw-3 mode toggle (planned)
 
 ### Input Methods
 
 **Mouse** (Primary):
-- [ ] Click card to select
-- [ ] Drag-and-drop between piles
-- [ ] Double-click to auto-move to foundation
-- [ ] Click stock to draw card
+- [ ] ⚠️ Click card to select (BLOCKED - debugging coordinate offset)
+- [ ] ⚠️ Drag-and-drop between piles (BLOCKED - debugging coordinate offset)
+- [x] Right-click to auto-move to foundation (WORKS)
+- [x] Click stock to draw card (WORKS)
 
 **Keyboard** (Accessibility):
-- [ ] Arrow keys to navigate cards
-- [ ] Enter to pick up/drop card
-- [ ] Number keys (1-4) for quick foundation moves
-- [ ] Space to draw from stock
-- [ ] U for undo
+- [x] Arrow keys to navigate cards (WORKS)
+- [x] Enter to pick up/drop card (WORKS)
+- [x] Number keys (1-4) for quick foundation moves (WORKS)
+- [x] Space to draw from stock (WORKS)
+- [ ] U for undo (planned)
 
-### Card Rendering
+### Card Rendering ✅ COMPLETE
 
-**Option A: Unicode Card Symbols** (Recommended)
+**Implementation**: Unicode symbols with lipgloss rounded borders
 ```
 Suits: ♠ ♥ ♦ ♣
 Ranks: A 2 3 4 5 6 7 8 9 T J Q K
 
-Example layout:
-┌─────┐
-│K ♠  │
+Actual rendering:
+╭─────╮
+│A ♠  │
 │     │
-│  ♠ K│
-└─────┘
+│♠ A  │
+╰─────╯
 ```
 
-**Option B: Full Unicode Cards** (If terminal supports)
-```
-🂡 🂢 🂣 🂤 🂥 🂦 🂧 🂨 🂩 🂪 🂫 🂬 🂭 🂮  (Spades)
-🂱 🂲 🂳 🂴 🂵 🂶 🂷 🂸 🂹 🂺 🂻 🂼 🂽 🂾  (Hearts)
-```
-⚠️ Issue: These are 2-char wide, would break alignment like minesweeper emojis
+**Dimensions**:
+- Width: 7 chars (5 content + 2 borders)
+- Height: 5 lines (3 content + 2 borders)
+- Style: `.Width(5).Height(3)` enforces consistent sizing
 
-**Decision**: Use Option A (Unicode symbols) for consistent width
+**Stacking**: Overlapping cards show top 2 lines (rounded border + rank/suit)
+
+**Fixed Issues**:
+- ✅ All cards now have consistent dimensions
+- ✅ Proper centered alignment with `lipgloss.Center`
+- ✅ Stacked cards match full card width
+- ✅ No clipped symbols (hearts render correctly)
 
 ### Animations
 
-#### 🎊 Waterfall Animation (On Win)
+#### 🎊 Waterfall Animation (On Win) ✅ COMPLETE
 
 **The Signature Feature!**
 
 When all cards are moved to foundation:
-1. Cards cascade down from top of screen
-2. Each card has random horizontal velocity
-3. Gravity pulls them down
-4. Bounce off bottom with decreasing elasticity
-5. Spin while falling
-6. After 3-5 seconds, show "You Won!" screen
+1. ✅ Cards cascade down from top of screen
+2. ✅ Each card has random horizontal velocity
+3. ✅ Gravity pulls them down
+4. ✅ Bounce off bottom with decreasing elasticity
+5. ✅ Cards continue moving after bounce
+6. ✅ After animation completes, show "You Won!" screen
 
-**Implementation Pattern**:
+**Implementation**:
 ```go
 type WaterfallCard struct {
     card     Card
@@ -146,13 +153,37 @@ Tick rate: 60fps (16ms) for smooth animation
 - [ ] Smooth slide when auto-completing to foundation
 - [ ] Subtle highlight on valid drop targets during drag
 
-### Validation & Rules
+### Validation & Rules ✅ COMPLETE
 
-- [ ] Only King can be placed on empty tableau
-- [ ] Tableau stacks alternate red/black, descending rank
-- [ ] Foundation builds up from Ace, same suit
-- [ ] Can only move fully revealed card sequences
-- [ ] Stock cycles through deck (1 or 3 passes depending on mode)
+- [x] Only King can be placed on empty tableau
+- [x] Tableau stacks alternate red/black, descending rank
+- [x] Foundation builds up from Ace, same suit
+- [x] Can only move fully revealed card sequences
+- [x] Stock cycles through deck (Draw-1 working)
+
+### ⚠️ Current Blocker: Mouse Coordinate Offset
+
+**Issue**: Mouse Y coordinates have massive offset (~78 lines)
+- Clicking waste pile (expected Y=8) reports Y=86
+- Clicking tableau card (expected Y=15) reports Y=26
+- Stock pile left-click works (drawing cards)
+- Right-click auto-move works (can send cards to foundation)
+- **Drag-and-drop completely broken** - can't select/move tableau cards
+
+**Debug Findings**:
+- Cards render at 7 chars wide × 5 lines tall ✅
+- Changed from `tea.WithMouseCellMotion()` to `tea.WithMouseAllMotion()` (matching minesweeper)
+- Added debug output showing click X,Y coordinates
+- Offsets don't match any consistent pattern (86-8=78, but 26-15=11)
+
+**Next Debugging Steps**:
+1. Check terminal size from debug output (Terminal: WxH)
+2. Determine if game is being vertically centered despite no `lipgloss.Place`
+3. Compare mouse event handling with minesweeper (which works correctly)
+4. Consider if WSL/terminal emulator is adding offset
+5. May need to subtract a calculated offset based on terminal height
+
+**Workaround**: Keyboard controls work perfectly for gameplay
 
 ### UI Layout
 
@@ -439,32 +470,50 @@ Reusable patterns for:
 
 ## 🎯 Next Immediate Steps
 
-1. **Create CHANGELOG.md** ✅
-2. **Finalize documentation** ✅
-3. **Begin Solitaire planning**:
-   - Design card struct
-   - Plan pile layouts
-   - Prototype card rendering
-4. **Start Solitaire implementation** (Weekend 1):
-   - Scaffold files
-   - Implement card logic
-   - Basic rendering
-5. **Drag-and-drop implementation** (Weekend 2):
-   - Mouse tracking
-   - Drop validation
-   - Visual feedback
-6. **Waterfall animation** (Weekend 2):
-   - Physics simulation
-   - Card rendering during fall
-   - Win screen integration
+### Solitaire Completion (v0.2.0)
+
+**Priority 1: Fix Mouse Drag-and-Drop** 🔴
+1. Test with debug output to capture terminal dimensions
+2. Identify source of Y coordinate offset (86 vs expected 8)
+3. Add offset compensation or fix coordinate calculation
+4. Verify drag-and-drop works across all piles
+5. Remove debug output once fixed
+
+**Priority 2: Polish & Testing** 🟡
+1. Add undo functionality (keyboard U key)
+2. Implement Draw-3 mode toggle
+3. Test on multiple terminals (Alacritty, iTerm2, Windows Terminal)
+4. Verify all animations work smoothly
+5. Clean up any remaining TODOs in code
+
+**Priority 3: Documentation** 🟢
+1. Add screenshots/GIFs to README
+2. Document controls clearly
+3. Add troubleshooting section for mouse issues
+4. Update CHANGELOG with v0.2.0 release notes
+
+### Phase 3: Game Launcher (v0.3.0)
+
+1. Create `cmd/classics/main.go`
+2. Design unified menu
+3. Integrate high scores
+4. Test launching both games
+5. Add game selection shortcuts
 
 ---
 
 **Created**: 2025-01-20
-**Last Updated**: 2025-01-20
+**Last Updated**: 2025-01-20 (Evening session - mouse debugging)
 **Owner**: GGPrompts
 
 **Status**:
-- ✅ Minesweeper complete (v0.1.0)
-- 🚧 Solitaire planned (v0.2.0)
+- ✅ Minesweeper complete (v0.1.0) - No known bugs
+- 🚧 Solitaire ~85% complete (v0.2.0) - Mouse drag blocked, keyboard works perfectly
 - 📋 Launcher planned (v0.3.0)
+
+**Session Notes**:
+- Fixed card sizing/alignment issues (all cards now consistent dimensions)
+- Fixed stacking rendering (cards overlap correctly with rounded corners)
+- Waterfall animation complete and working
+- Discovered mouse coordinate offset bug - needs investigation
+- Game is fully playable via keyboard controls
