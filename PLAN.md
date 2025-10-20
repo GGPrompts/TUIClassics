@@ -98,6 +98,12 @@ Actual rendering:
 - ✅ Stacked cards match full card width
 - ✅ No clipped symbols (hearts render correctly)
 
+**Known Issue**:
+- ⚠️ Black borders invisible on black terminal backgrounds
+- Borders use `blackColor` which blends into black terminal backgrounds
+- Makes rounded corners appear square
+- **Fix needed**: Change border colors to white or gray for visibility
+
 ### Animations
 
 #### 🎊 Waterfall Animation (On Win) ✅ COMPLETE
@@ -480,11 +486,12 @@ Reusable patterns for:
 5. Remove debug output once fixed
 
 **Priority 2: Polish & Testing** 🟡
-1. Add undo functionality (keyboard U key)
-2. Implement Draw-3 mode toggle
-3. Test on multiple terminals (Alacritty, iTerm2, Windows Terminal)
-4. Verify all animations work smoothly
-5. Clean up any remaining TODOs in code
+1. Fix card border visibility on black backgrounds (change from black to white/gray)
+2. Add undo functionality (keyboard U key)
+3. Implement Draw-3 mode toggle
+4. Test on multiple terminals (Alacritty, iTerm2, Windows Terminal)
+5. Verify all animations work smoothly
+6. Clean up any remaining TODOs in code
 
 **Priority 3: Documentation** 🟢
 1. Add screenshots/GIFs to README
