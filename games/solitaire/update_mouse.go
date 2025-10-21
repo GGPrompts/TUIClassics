@@ -1,6 +1,8 @@
 package solitaire
 
 import (
+	"time"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -111,7 +113,57 @@ func (m Model) handleMouseRelease(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 	// If mouse didn't move much, treat as click (select for keyboard movement)
 	// Otherwise treat as drag-and-drop
 	if distanceMoved < 4 { // Threshold: less than 2 pixels in any direction
-		// Click to select - set keyboard selection state
+		// Check for double-click (like Windows Solitaire)
+		now := time.Now()
+		timeSinceLastClick := now.Sub(m.lastClickTime)
+		clickDx := msg.X - m.lastClickX
+		clickDy := msg.Y - m.lastClickY
+		clickDistance := clickDx*clickDx + clickDy*clickDy
+
+		// Double-click detected: auto-move to foundation (like right-click)
+		if timeSinceLastClick < 500*time.Millisecond && clickDistance < 16 {
+			// Same logic as right-click auto-move
+			if m.dragFromPile != nil {
+				var card *Card
+
+				switch m.dragFromPile.PileType {
+				case TableauPile:
+					pile := m.tableau[m.dragFromPile.PileIndex]
+					if len(pile.Cards) > 0 && pile.Cards[len(pile.Cards)-1].FaceUp {
+						card = &pile.Cards[len(pile.Cards)-1]
+					}
+
+				case WastePile:
+					if len(m.waste.Cards) > 0 {
+						card = &m.waste.Cards[len(m.waste.Cards)-1]
+					}
+				}
+
+				if card != nil {
+					m.AutoMoveToFoundation(*card, *m.dragFromPile)
+
+					// Check win condition
+					if m.CheckWin() {
+						m.state = StateWon
+						m.elapsedTime = m.elapsedTime
+						m.StartWaterfallAnimation()
+						m.draggingCard = nil
+						m.draggingCards = nil
+						m.dragFromPile = nil
+						return m, animationTick()
+					}
+				}
+			}
+
+			// Clear drag state and reset double-click timer
+			m.draggingCard = nil
+			m.draggingCards = nil
+			m.dragFromPile = nil
+			m.lastClickTime = time.Time{} // Reset to prevent triple-click
+			return m, nil
+		}
+
+		// Single click to select - set keyboard selection state
 		if m.dragFromPile != nil {
 			m.selectedPile = m.dragFromPile
 			m.selectedCard = m.draggingCard
@@ -119,6 +171,11 @@ func (m Model) handleMouseRelease(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 			// Update cursor to match selection
 			m.cursor = *m.dragFromPile
 		}
+
+		// Update last click time/position for double-click detection
+		m.lastClickTime = now
+		m.lastClickX = msg.X
+		m.lastClickY = msg.Y
 	} else {
 		// Drag-and-drop - attempt to move the cards
 		location := m.getPileAtPosition(msg.X, msg.Y)

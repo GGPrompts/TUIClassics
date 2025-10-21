@@ -108,6 +108,11 @@ type Model struct {
 	mousePressX   int // Track where mouse was pressed
 	mousePressY   int
 
+	// Double-click detection
+	lastClickTime time.Time
+	lastClickX    int
+	lastClickY    int
+
 	// Animation state
 	animating         bool
 	animationFrame    int

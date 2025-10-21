@@ -138,7 +138,7 @@ func (m Model) viewGame() string {
 	b.WriteString("\n")
 
 	// Help text (centered)
-	help := "Arrows: Navigate | Enter: Select/Move | Space: Draw | N: New Game | Q: Quit"
+	help := "Double-click or Right-click: Auto-move | Space: Draw | N: New Game | Q: Quit"
 	centeredHelp := helpStyle.Width(m.termWidth).Align(lipgloss.Center).Render(help)
 	b.WriteString(centeredHelp)
 
