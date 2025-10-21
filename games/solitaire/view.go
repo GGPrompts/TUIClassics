@@ -280,7 +280,7 @@ func (m Model) renderTableau() string {
 			for cardIdx := 0; cardIdx < len(pile.Cards); cardIdx++ {
 				card := pile.Cards[cardIdx]
 				isLast := cardIdx == len(pile.Cards)-1
-				isCursor := m.cursor.PileType == TableauPile && m.cursor.PileIndex == col && isLast
+				isCursor := m.cursor.PileType == TableauPile && m.cursor.PileIndex == col && m.cursorCardIndex == cardIdx
 				isSelected := m.selectedPile != nil && m.selectedPile.PileType == TableauPile &&
 					m.selectedPile.PileIndex == col && m.selectedIndex == cardIdx
 				isDragging := m.draggingCard != nil && m.dragFromPile != nil &&
@@ -297,7 +297,7 @@ func (m Model) renderTableau() string {
 				} else {
 					// Not last card - show only top lines for stacking effect
 					if card.FaceUp {
-						columnContent.WriteString(m.renderCardTopLine(card, isSelected || isDragging))
+						columnContent.WriteString(m.renderCardTopLine(card, isSelected || isDragging, isCursor))
 						columnContent.WriteString("\n")
 					} else {
 						columnContent.WriteString(m.renderCardBackTopLine())
@@ -357,7 +357,7 @@ func (m Model) renderCardBack(isCursor bool) string {
 
 // renderCardTopLine renders just the top 2 lines of a face-up card (for stacking)
 // This creates visual overlap so you see the rounded top of each card
-func (m Model) renderCardTopLine(card Card, isSelected bool) string {
+func (m Model) renderCardTopLine(card Card, isSelected bool, isCursor bool) string {
 	// Render a full card using the same logic as renderCard, then extract top 2 lines
 	suit := card.Suit.SuitSymbol()
 	rank := card.Rank.RankSymbol()
@@ -377,6 +377,8 @@ func (m Model) renderCardTopLine(card Card, isSelected bool) string {
 	style := cardStyle.Copy().Foreground(color)
 	if isSelected {
 		style = selectedCardStyle.Copy().Foreground(color)
+	} else if isCursor {
+		style = cursorCardStyle.Copy().Foreground(color)
 	}
 
 	// Render the full card

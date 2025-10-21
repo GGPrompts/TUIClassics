@@ -96,6 +96,7 @@ type Model struct {
 
 	// Cursor for keyboard navigation
 	cursor         CursorLocation
+	cursorCardIndex int // Which card in tableau stack (for up/down navigation)
 	selectedCard   *Card
 	selectedPile   *CursorLocation
 	selectedIndex  int // Index of card in pile

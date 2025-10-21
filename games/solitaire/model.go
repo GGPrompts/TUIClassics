@@ -87,6 +87,7 @@ func (m *Model) NewGame() {
 
 	// Reset cursor
 	m.cursor = CursorLocation{PileType: TableauPile, PileIndex: 0}
+	m.cursorCardIndex = 0 // Start at first card (which is also the top card of first pile)
 	m.selectedCard = nil
 	m.selectedPile = nil
 }

@@ -87,11 +87,11 @@ func (m Model) handleWinKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m Model) handleGameKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "up", "k":
-		// Not used in Solitaire
+		m.moveCursorUp()
 		return m, nil
 
 	case "down", "j":
-		// Not used in Solitaire
+		m.moveCursorDown()
 		return m, nil
 
 	case "left", "h":
@@ -136,6 +136,8 @@ func (m *Model) moveCursorLeft() {
 			m.cursor.PileType = FoundationPile
 			m.cursor.PileIndex = 3
 		}
+		// Reset card index when moving between piles
+		m.resetCursorCardIndex()
 
 	case FoundationPile:
 		if m.cursor.PileIndex > 0 {
@@ -154,6 +156,7 @@ func (m *Model) moveCursorLeft() {
 		// Wrap to tableau
 		m.cursor.PileType = TableauPile
 		m.cursor.PileIndex = 6
+		m.resetCursorCardIndex()
 	}
 }
 
@@ -175,6 +178,7 @@ func (m *Model) moveCursorRight() {
 			// Wrap to tableau
 			m.cursor.PileType = TableauPile
 			m.cursor.PileIndex = 0
+			m.resetCursorCardIndex()
 		}
 
 	case TableauPile:
@@ -184,6 +188,60 @@ func (m *Model) moveCursorRight() {
 			// Wrap to stock
 			m.cursor.PileType = StockPile
 			m.cursor.PileIndex = 0
+		}
+		// Reset card index when moving between piles
+		m.resetCursorCardIndex()
+	}
+}
+
+// moveCursorUp moves the cursor up within a tableau stack
+func (m *Model) moveCursorUp() {
+	// Only works on tableau piles
+	if m.cursor.PileType != TableauPile {
+		return
+	}
+
+	pile := m.tableau[m.cursor.PileIndex]
+	if len(pile.Cards) == 0 {
+		return
+	}
+
+	// Move up to previous card (earlier in the stack)
+	if m.cursorCardIndex > 0 {
+		// Check if the previous card is face up
+		if pile.Cards[m.cursorCardIndex-1].FaceUp {
+			m.cursorCardIndex--
+		}
+	}
+}
+
+// moveCursorDown moves the cursor down within a tableau stack
+func (m *Model) moveCursorDown() {
+	// Only works on tableau piles
+	if m.cursor.PileType != TableauPile {
+		return
+	}
+
+	pile := m.tableau[m.cursor.PileIndex]
+	if len(pile.Cards) == 0 {
+		return
+	}
+
+	// Move down to next card (later in the stack)
+	maxIndex := len(pile.Cards) - 1
+	if m.cursorCardIndex < maxIndex {
+		m.cursorCardIndex++
+	}
+}
+
+// resetCursorCardIndex resets the card index to the top of the pile
+func (m *Model) resetCursorCardIndex() {
+	if m.cursor.PileType == TableauPile {
+		pile := m.tableau[m.cursor.PileIndex]
+		if len(pile.Cards) > 0 {
+			m.cursorCardIndex = len(pile.Cards) - 1
+		} else {
+			m.cursorCardIndex = 0
 		}
 	}
 }
@@ -228,15 +286,15 @@ func (m Model) selectCard() (tea.Model, tea.Cmd) {
 	switch m.cursor.PileType {
 	case TableauPile:
 		pile := m.tableau[m.cursor.PileIndex]
-		if len(pile.Cards) > 0 {
-			topCard := pile.Cards[len(pile.Cards)-1]
-			if topCard.FaceUp {
+		if len(pile.Cards) > 0 && m.cursorCardIndex < len(pile.Cards) {
+			card := pile.Cards[m.cursorCardIndex]
+			if card.FaceUp {
 				m.selectedPile = &CursorLocation{
 					PileType:  TableauPile,
 					PileIndex: m.cursor.PileIndex,
 				}
-				m.selectedIndex = len(pile.Cards) - 1
-				m.selectedCard = &topCard
+				m.selectedIndex = m.cursorCardIndex
+				m.selectedCard = &card
 			}
 		}
 
