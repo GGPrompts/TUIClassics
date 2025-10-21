@@ -16,8 +16,8 @@ func (m Model) View() string {
 	}
 
 	switch m.state {
-	case StateMenu:
-		return m.viewMenu()
+	// case StateMenu:  // Commented out - skipping welcome screen
+	//	return m.viewMenu()
 	case StatePlaying:
 		return m.viewGame()
 	case StateWon:
@@ -28,6 +28,8 @@ func (m Model) View() string {
 }
 
 // viewMenu renders the main menu
+// Commented out - skipping welcome screen for now
+/*
 func (m Model) viewMenu() string {
 	title := titleStyle.Render("♠ ♥ SOLITAIRE ♦ ♣")
 
@@ -47,6 +49,7 @@ func (m Model) viewMenu() string {
 		content,
 	)
 }
+*/
 
 // viewGame renders the main game view
 func (m Model) viewGame() string {
@@ -68,9 +71,11 @@ func (m Model) viewGame() string {
 		}
 	}
 
-	// Total height: title(1) + \n\n(2) + stats(1) + \n\n(2) +
-	//               topRow(5) + \n\n(2) + tableau + \n(1) + help(1)
-	totalLines := 1 + 2 + 1 + 2 + 5 + 2 + maxTableauHeight + 1 + 1
+	// Total height calculation (per CLAUDE.md):
+	// "content\n\n" occupies 2 lines total (content + 1 blank), not 3
+	// Line 0: title, Line 1: blank, Line 2: stats, Line 3: blank,
+	// Lines 4-8: topRow (5), Line 9: blank, Lines 10+: tableau, Last: help
+	totalLines := 11 + maxTableauHeight  // Was 15, off by 4 lines!
 	topPadding := (m.termHeight - totalLines) / 2
 	if topPadding < 0 {
 		topPadding = 0

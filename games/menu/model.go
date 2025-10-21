@@ -17,15 +17,9 @@ func New() Model {
 		},
 		{
 			Name:        "Solitaire",
-			Description: "Klondike card game (Work in Progress)",
+			Description: "Klondike card game",
 			Hotkey:      "s",
 			NewFunc:     func() tea.Model { return solitaire.New() },
-		},
-		{
-			Name:        "Tanks",
-			Description: "Coming soon...",
-			Hotkey:      "t",
-			NewFunc:     nil, // Not implemented yet
 		},
 	}
 

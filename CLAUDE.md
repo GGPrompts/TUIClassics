@@ -425,6 +425,52 @@ b.WriteString("\n\n")  // Exactly 2 lines
 
 ---
 
+### Issue 7: Mouse Clicks Off by Multiple Lines (totalLines Calculation)
+
+**Symptom**: Mouse clicks register 1-2 lines higher than actual click position. Clicks don't register on top 1/4 of cards.
+
+**Root Cause**: Misunderstanding how `"\n\n"` spacing works in line count calculations.
+
+**The Math Error**:
+```go
+// WRONG (what we had):
+totalLines := 1 + 2 + 1 + 2 + 5 + 2 + maxTableauHeight + 1 + 1
+//           title  "\n\n" stats "\n\n" topRow "\n\n" ...
+//           = 15 + maxTableauHeight (4 lines too many!)
+
+// CORRECT (per CLAUDE.md Minesweeper fix):
+totalLines := 11 + maxTableauHeight
+```
+
+**Why**: When you write `"title\n\n"`, it doesn't occupy 1 + 2 = 3 lines. It occupies **2 lines total**:
+- Line 0: title (content written)
+- Line 1: blank (from first `\n`)
+- Cursor moves to line 2 (from second `\n`)
+
+**Trace Through Rendering**:
+```
+Line 0: title
+Line 1: blank (from "\n\n")
+Line 2: stats
+Line 3: blank (from "\n\n")
+Lines 4-8: topRow (5 lines)
+Line 9: blank (from "\n\n")
+Lines 10+: tableau starts
+```
+
+**Fix** (view.go:75, update_mouse.go:209, update_mouse.go:293):
+```go
+// Each "content\n\n" = 2 lines (content + 1 blank)
+// title(1) + blank(1) + stats(1) + blank(1) + topRow(5) + blank(1) + tableau + help(1)
+totalLines := 11 + maxTableauHeight
+```
+
+**Impact**: Old calculation made `topPadding` ~2 lines too small, causing content to render higher than expected. When users clicked on visually-rendered cards, the coordinate math thought clicks were 2 lines above the calculated card positions, preventing clicks on the top portion of cards.
+
+**Key Lesson**: This is the **same pattern** as Minesweeper Issue 1. The `"\n\n"` spacing adds 1 blank line to the count, not 2. **Always trace through actual rendering line-by-line** to verify coordinate calculations.
+
+---
+
 ### Pattern: Click-to-Select for Hybrid Input
 
 **Implementation**: Detect click vs drag by measuring distance:

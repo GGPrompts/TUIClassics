@@ -205,7 +205,8 @@ func (m *Model) getPileAtPosition(x, y int) *CursorLocation {
 		}
 	}
 
-	totalLines := 1 + 2 + 1 + 2 + 5 + 2 + maxTableauHeight + 1 + 1
+	// Total height calculation (must match view.go exactly)
+	totalLines := 11 + maxTableauHeight
 	topPadding := (m.termHeight - totalLines) / 2
 	if topPadding < 0 {
 		topPadding = 0
@@ -287,7 +288,8 @@ func (m *Model) getTableauCardIndex(pileIndex, y int) int {
 		}
 	}
 
-	totalLines := 1 + 2 + 1 + 2 + 5 + 2 + maxTableauHeight + 1 + 1
+	// Total height calculation (must match view.go exactly)
+	totalLines := 11 + maxTableauHeight
 	topPadding := (m.termHeight - totalLines) / 2
 	if topPadding < 0 {
 		topPadding = 0

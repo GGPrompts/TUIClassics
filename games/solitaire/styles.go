@@ -61,8 +61,7 @@ var (
 			Foreground(whiteColor)
 
 	helpStyle = lipgloss.NewStyle().
-			Foreground(grayColor).
-			MarginTop(1)
+			Foreground(grayColor)
 
 	menuStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).

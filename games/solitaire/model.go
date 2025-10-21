@@ -10,7 +10,7 @@ import (
 // New creates a new Solitaire game model
 func New() Model {
 	m := Model{
-		state:    StateMenu,
+		// state:    StateMenu,  // Commented out - skip welcome screen for now
 		drawMode: 1, // Start with Draw-1
 		score:    0,
 		moves:    0,
@@ -28,6 +28,9 @@ func New() Model {
 
 	// Start cursor on first tableau pile
 	m.cursor = CursorLocation{PileType: TableauPile, PileIndex: 0}
+
+	// Start game immediately (skip welcome screen)
+	m.NewGame()
 
 	return m
 }
