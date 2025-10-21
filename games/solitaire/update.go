@@ -113,6 +113,13 @@ func (m Model) handleGameKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "1", "2", "3", "4":
 		// Quick move to foundation
 		return m.handleQuickFoundationMove(msg.String())
+
+	case "w", "W":
+		// Secret: Trigger waterfall animation (for testing/demo)
+		m.state = StateWon
+		m.elapsedTime = time.Since(m.startTime)
+		m.StartWaterfallAnimation()
+		return m, animationTick()
 	}
 
 	return m, nil

@@ -8,7 +8,10 @@ import (
 
 // Init initializes the model
 func (m Model) Init() tea.Cmd {
-	return nil
+	return tea.Batch(
+		tea.EnterAltScreen,
+		tea.WindowSize(), // Request initial window size for centering
+	)
 }
 
 // Update handles messages and updates the model

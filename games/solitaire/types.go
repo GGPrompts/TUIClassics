@@ -105,6 +105,8 @@ type Model struct {
 	draggingCards []Card // For moving sequences
 	dragFromPile  *CursorLocation
 	dragFromIndex int
+	mousePressX   int // Track where mouse was pressed
+	mousePressY   int
 
 	// Animation state
 	animating         bool

@@ -352,6 +352,126 @@ func tick() tea.Cmd {
 
 ---
 
+## Solitaire Implementation Notes
+
+### Issue 4: Centering with Manual Padding
+
+**Symptom**: Mouse coordinates don't work with `lipgloss.Place` centering.
+
+**Solution**: Use manual padding with exact coordinate calculations:
+
+```go
+// Calculate padding
+topPadding := (m.termHeight - totalLines) / 2
+leftPadding := (m.termWidth - contentWidth) / 2
+
+// Apply padding to EACH line
+for _, line := range contentLines {
+    b.WriteString(strings.Repeat(" ", leftPadding))
+    b.WriteString(line)
+    b.WriteString("\n")
+}
+```
+
+**Mouse Coordinate Adjustment**:
+```go
+// Subtract padding to get content-relative coordinates
+relX := mouseX - leftPadding
+relY := mouseY - topPadding
+```
+
+**Key Lesson**: Multi-line content (like cards) needs per-line padding, not just first line.
+
+---
+
+### Issue 5: Double Spacing from Margins
+
+**Symptom**: Cards misaligned after terminal resize; top row broken.
+
+**Root Cause**: Style margins + manual `\n\n` created double spacing:
+```go
+// WRONG:
+titleStyle = lipgloss.NewStyle().MarginBottom(1)
+b.WriteString(titleStyle.Render(title))
+b.WriteString("\n\n")  // 1 + 2 = 3 lines!
+
+// CORRECT:
+titleStyle = lipgloss.NewStyle()  // No margin
+b.WriteString(titleStyle.Render(title))
+b.WriteString("\n\n")  // Exactly 2 lines
+```
+
+**Key Lesson**: Don't mix lipgloss margins with manual spacing - pick one approach.
+
+---
+
+### Issue 6: Waterfall Animation with Styled Text
+
+**Symptom**: ANSI escape codes visible in grid; white backgrounds don't connect.
+
+**Root Cause**: Lipgloss styles add ANSI codes that break plain character grids.
+
+**Solution**: Render plain-text cards without styling:
+```go
+// Plain box-drawing characters only
+╭─────╮
+│ A S │  // Use S/H/D/C instead of ♠♥♦♣ (double-width)
+│     │
+│ S A │
+╰─────╯
+```
+
+**Key Lesson**: Character grids can't handle ANSI styling - use plain text for animations.
+
+---
+
+### Pattern: Click-to-Select for Hybrid Input
+
+**Implementation**: Detect click vs drag by measuring distance:
+
+```go
+// On press: Store position
+m.mousePressX = msg.X
+m.mousePressY = msg.Y
+
+// On release: Check if moved
+dx := msg.X - m.mousePressX
+dy := msg.Y - m.mousePressY
+distanceMoved := dx*dx + dy*dy
+
+if distanceMoved < 4 {  // Threshold: ~2 pixels
+    // Click: Select for keyboard movement
+    m.selectedPile = m.dragFromPile
+    m.cursor = *m.dragFromPile
+} else {
+    // Drag: Move cards immediately
+    m.MoveCards(...)
+}
+```
+
+**Benefits**: Users can click to select, then use arrow keys to move - best of both worlds.
+
+---
+
+### Pattern: Initial Terminal Size Request
+
+**Problem**: Games appear uncentered on first launch from launcher.
+
+**Solution**: Request terminal dimensions in `Init()`:
+```go
+func (m Model) Init() tea.Cmd {
+    return tea.Batch(
+        tea.EnterAltScreen,
+        tea.WindowSize(),  // Request size immediately
+        tickCmd(),
+    )
+}
+```
+
+**Key Lesson**: Don't wait for manual resize - request dimensions on init.
+
+---
+
 ## Key Files Reference
 
 | Feature | File | Lines |
@@ -366,7 +486,7 @@ func tick() tea.Cmd {
 ---
 
 **Created**: 2025-01-20
-**Last Updated**: 2025-01-20
+**Last Updated**: 2025-01-21
 **Purpose**: Preserve critical patterns and bug fixes for future AI-assisted development
 
 **Related Documentation**:

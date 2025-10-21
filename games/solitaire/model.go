@@ -36,6 +36,7 @@ func New() Model {
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		tea.EnterAltScreen,
+		tea.WindowSize(), // Request initial window size for centering
 		tickCmd(),
 	)
 }
@@ -137,24 +138,47 @@ func (m *Model) StartWaterfallAnimation() {
 	m.animationFrame = 0
 	m.waterfallCards = []WaterfallCard{}
 
-	// Create waterfall cards from all foundation piles
 	startX := float64(m.termWidth) / 2
-	for i := 0; i < 4; i++ {
-		for j := 0; j < len(m.foundation[i].Cards); j++ {
-			card := m.foundation[i].Cards[j]
-			// Random horizontal velocity
-			vx := (rand.Float64() - 0.5) * 4
-			vy := rand.Float64() * 2
+	cardCount := 0
 
-			m.waterfallCards = append(m.waterfallCards, WaterfallCard{
-				card:     card,
-				x:        startX + float64(i)*2,
-				y:        5.0,
-				vx:       vx,
-				vy:       vy,
-				rotation: 0,
-			})
+	// Collect all face-up cards from all piles
+	allCards := []Card{}
+
+	// Foundation piles
+	for i := 0; i < 4; i++ {
+		allCards = append(allCards, m.foundation[i].Cards...)
+	}
+
+	// Tableau piles (only face-up cards)
+	for i := 0; i < 7; i++ {
+		for _, card := range m.tableau[i].Cards {
+			if card.FaceUp {
+				allCards = append(allCards, card)
+			}
 		}
+	}
+
+	// Waste pile
+	allCards = append(allCards, m.waste.Cards...)
+
+	// Create waterfall cards from collected cards
+	for _, card := range allCards {
+		// Random horizontal velocity
+		vx := (rand.Float64() - 0.5) * 6
+		vy := rand.Float64()*3 - 1
+
+		// Spread cards horizontally
+		offsetX := float64(cardCount%10) * 3
+
+		m.waterfallCards = append(m.waterfallCards, WaterfallCard{
+			card:     card,
+			x:        startX + offsetX - 15,
+			y:        5.0 + rand.Float64()*3,
+			vx:       vx,
+			vy:       vy,
+			rotation: 0,
+		})
+		cardCount++
 	}
 
 	// Animation runs for ~3 seconds at 60fps = 180 frames

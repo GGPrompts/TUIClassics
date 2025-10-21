@@ -10,13 +10,15 @@ import (
 
 // View implements tea.Model
 func (m Model) View() string {
+	// Check animation state first (can occur during StatePlaying or StateWon)
+	if m.animating {
+		return m.viewWaterfall()
+	}
+
 	switch m.state {
 	case StateMenu:
 		return m.viewMenu()
 	case StatePlaying:
-		if m.animating {
-			return m.viewWaterfall()
-		}
 		return m.viewGame()
 	case StateWon:
 		return m.viewWin()
@@ -50,34 +52,90 @@ func (m Model) viewMenu() string {
 func (m Model) viewGame() string {
 	var b strings.Builder
 
-	// Title
-	title := titleStyle.Render("♠ ♥ SOLITAIRE ♦ ♣")
+	// Calculate content dimensions for centering
+	// Estimate tableau height: count cards in tallest pile
+	maxTableauHeight := 0
+	for _, pile := range m.tableau {
+		// Stacked cards: 2 lines each except last card (5 lines)
+		height := 0
+		if len(pile.Cards) > 0 {
+			height = (len(pile.Cards)-1)*2 + 5
+		} else {
+			height = 5 // Empty pile
+		}
+		if height > maxTableauHeight {
+			maxTableauHeight = height
+		}
+	}
+
+	// Total height: title(1) + \n\n(2) + stats(1) + \n\n(2) +
+	//               topRow(5) + \n\n(2) + tableau + \n(1) + help(1)
+	totalLines := 1 + 2 + 1 + 2 + 5 + 2 + maxTableauHeight + 1 + 1
+	topPadding := (m.termHeight - totalLines) / 2
+	if topPadding < 0 {
+		topPadding = 0
+	}
+
+	// Total width: 7 tableau piles * 7 chars each = 49 chars
+	contentWidth := 7 * 7
+	leftPadding := (m.termWidth - contentWidth) / 2
+	if leftPadding < 0 {
+		leftPadding = 0
+	}
+
+	// Add top padding
+	for i := 0; i < topPadding; i++ {
+		b.WriteString("\n")
+	}
+
+	// Title (centered)
+	title := titleStyle.Width(m.termWidth).Align(lipgloss.Center).Render("♠ ♥ SOLITAIRE ♦ ♣")
 	b.WriteString(title)
 	b.WriteString("\n\n")
 
-	// Stats
+	// Stats (centered)
 	elapsed := m.elapsedTime
 	if m.state == StatePlaying {
 		elapsed = time.Since(m.startTime)
 	}
 	stats := fmt.Sprintf("Score: %d  |  Moves: %d  |  Time: %s",
 		m.score, m.moves, formatDuration(elapsed))
-	b.WriteString(statsStyle.Render(stats))
+	centeredStats := statsStyle.Width(m.termWidth).Align(lipgloss.Center).Render(stats)
+	b.WriteString(centeredStats)
 	b.WriteString("\n\n")
 
-	// Top row: Stock, Waste, and Foundation piles
+	// Top row: Stock, Waste, and Foundation piles (centered)
 	topRow := m.renderTopRow()
-	b.WriteString(topRow)
+	// Top row is multi-line, need to pad each line
+	topRowLines := strings.Split(topRow, "\n")
+	for i, line := range topRowLines {
+		b.WriteString(strings.Repeat(" ", leftPadding))
+		b.WriteString(line)
+		if i < len(topRowLines)-1 {
+			b.WriteString("\n")
+		}
+	}
 	b.WriteString("\n\n")
 
-	// Tableau piles
+	// Tableau piles (centered)
 	tableau := m.renderTableau()
-	b.WriteString(tableau)
+	// Tableau is multi-line, need to pad each line
+	tableauLines := strings.Split(tableau, "\n")
+	for i, line := range tableauLines {
+		if line != "" || i < len(tableauLines)-1 { // Don't pad trailing empty line
+			b.WriteString(strings.Repeat(" ", leftPadding))
+			b.WriteString(line)
+			if i < len(tableauLines)-1 {
+				b.WriteString("\n")
+			}
+		}
+	}
 	b.WriteString("\n")
 
-	// Help text
-	help := helpStyle.Render("Arrows: Navigate | Enter: Select/Move | Space: Draw | N: New Game | Q: Quit")
-	b.WriteString(help)
+	// Help text (centered)
+	help := "Arrows: Navigate | Enter: Select/Move | Space: Draw | N: New Game | Q: Quit"
+	centeredHelp := helpStyle.Width(m.termWidth).Align(lipgloss.Center).Render(help)
+	b.WriteString(centeredHelp)
 
 	return b.String()
 }
@@ -140,7 +198,8 @@ func (m Model) renderWastePile() string {
 	topCard := m.waste.Cards[len(m.waste.Cards)-1]
 	isCursor := m.cursor.PileType == WastePile
 	isSelected := m.selectedPile != nil && m.selectedPile.PileType == WastePile
-	return m.renderCard(topCard, isCursor, isSelected)
+	isDragging := m.draggingCard != nil && m.dragFromPile != nil && m.dragFromPile.PileType == WastePile
+	return m.renderCard(topCard, isCursor, isSelected || isDragging)
 }
 
 // renderFoundationPile renders a foundation pile
@@ -165,7 +224,15 @@ func (m Model) renderFoundationPile(index int) string {
 			centerText(suit, 5),
 			"",
 		)
-		empty := emptyPileStyle.Render(content)
+
+		// Show cursor on empty foundation if it's selected
+		isCursor := m.cursor.PileType == FoundationPile && m.cursor.PileIndex == index
+		style := emptyPileStyle
+		if isCursor {
+			style = emptyPileStyle.Copy().BorderForeground(lipgloss.Color("#00FF00"))
+		}
+
+		empty := style.Render(content)
 		return empty
 	}
 
@@ -173,7 +240,8 @@ func (m Model) renderFoundationPile(index int) string {
 	topCard := pile.Cards[len(pile.Cards)-1]
 	isCursor := m.cursor.PileType == FoundationPile && m.cursor.PileIndex == index
 	isSelected := m.selectedPile != nil && m.selectedPile.PileType == FoundationPile && m.selectedPile.PileIndex == index
-	return m.renderCard(topCard, isCursor, isSelected)
+	isDragging := m.draggingCard != nil && m.dragFromPile != nil && m.dragFromPile.PileType == FoundationPile && m.dragFromPile.PileIndex == index
+	return m.renderCard(topCard, isCursor, isSelected || isDragging)
 }
 
 // renderTableau renders all tableau piles with stacking
@@ -190,7 +258,15 @@ func (m Model) renderTableau() string {
 				centerText("K", 5),
 				"",
 			)
-			empty := emptyPileStyle.Render(content)
+
+			// Show cursor on empty tableau if it's selected
+			isCursor := m.cursor.PileType == TableauPile && m.cursor.PileIndex == col
+			style := emptyPileStyle
+			if isCursor {
+				style = emptyPileStyle.Copy().BorderForeground(lipgloss.Color("#00FF00"))
+			}
+
+			empty := style.Render(content)
 			columns = append(columns, empty)
 		} else {
 			// Build this column from top to bottom
@@ -202,18 +278,21 @@ func (m Model) renderTableau() string {
 				isCursor := m.cursor.PileType == TableauPile && m.cursor.PileIndex == col && isLast
 				isSelected := m.selectedPile != nil && m.selectedPile.PileType == TableauPile &&
 					m.selectedPile.PileIndex == col && m.selectedIndex == cardIdx
+				isDragging := m.draggingCard != nil && m.dragFromPile != nil &&
+					m.dragFromPile.PileType == TableauPile && m.dragFromPile.PileIndex == col &&
+					cardIdx >= m.dragFromIndex
 
 				if isLast {
 					// Last card in pile - show full card
 					if card.FaceUp {
-						columnContent.WriteString(m.renderCard(card, isCursor, isSelected))
+						columnContent.WriteString(m.renderCard(card, isCursor, isSelected || isDragging))
 					} else {
 						columnContent.WriteString(m.renderCardBack(false))
 					}
 				} else {
 					// Not last card - show only top lines for stacking effect
 					if card.FaceUp {
-						columnContent.WriteString(m.renderCardTopLine(card, isSelected))
+						columnContent.WriteString(m.renderCardTopLine(card, isSelected || isDragging))
 						columnContent.WriteString("\n")
 					} else {
 						columnContent.WriteString(m.renderCardBackTopLine())
@@ -350,20 +429,29 @@ func (m Model) viewWaterfall() string {
 		}
 	}
 
-	// Draw falling cards
+	// Draw falling cards as full card boxes
 	for _, wc := range m.waterfallCards {
 		x := int(wc.x)
 		y := int(wc.y)
 
-		if y >= 0 && y < m.termHeight && x >= 0 && x < m.termWidth-5 {
-			// Simple card representation for animation
-			rank := wc.card.Rank.RankSymbol()
-			suit := wc.card.Suit.SuitSymbol()
-			cardStr := rank + suit
+		// Render the full card with borders
+		renderedCard := m.renderWaterfallCard(wc.card)
+		cardLines := strings.Split(renderedCard, "\n")
 
-			for i, ch := range cardStr {
-				if x+i < m.termWidth {
-					grid[y][x+i] = ch
+		// Place each line of the card into the grid
+		for lineIdx, line := range cardLines {
+			cardY := y + lineIdx
+			if cardY >= 0 && cardY < m.termHeight {
+				// Convert line to runes and place in grid
+				lineRunes := []rune(line)
+				for i, ch := range lineRunes {
+					gridX := x + i
+					if gridX >= 0 && gridX < m.termWidth {
+						// Only overwrite spaces (so cards can overlap naturally)
+						if grid[cardY][gridX] == ' ' || grid[cardY][gridX] == 0 {
+							grid[cardY][gridX] = ch
+						}
+					}
 				}
 			}
 		}
@@ -377,6 +465,38 @@ func (m Model) viewWaterfall() string {
 	}
 
 	return b.String()
+}
+
+// renderWaterfallCard renders a card for the waterfall animation (plain text, no ANSI codes)
+func (m Model) renderWaterfallCard(card Card) string {
+	rank := card.Rank.RankSymbol()
+
+	// Use single-character suit letters to avoid double-width Unicode issues
+	var suitChar string
+	switch card.Suit {
+	case Spades:
+		suitChar = "S"
+	case Hearts:
+		suitChar = "H"
+	case Diamonds:
+		suitChar = "D"
+	case Clubs:
+		suitChar = "C"
+	}
+
+	// Plain text card with box-drawing characters (all single-width chars)
+	line1 := fmt.Sprintf("%s %s", rank, suitChar)
+	line3 := fmt.Sprintf("%s %s", suitChar, rank)
+
+	// Build a simple 5-line card with borders (7 chars wide to match game cards)
+	var lines []string
+	lines = append(lines, "╭─────╮")                         // Top border
+	lines = append(lines, "│"+centerText(line1, 5)+"│")      // Top content
+	lines = append(lines, "│     │")                         // Middle spacer
+	lines = append(lines, "│"+centerText(line3, 5)+"│")      // Bottom content
+	lines = append(lines, "╰─────╯")                         // Bottom border
+
+	return strings.Join(lines, "\n")
 }
 
 // viewWin renders the win screen

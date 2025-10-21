@@ -16,14 +16,14 @@ var (
 var (
 	cardStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(blackColor).
+			BorderForeground(grayColor).
 			Background(whiteColor).
 			Width(5).   // Force consistent width (content area)
 			Height(3)   // Force consistent height (content area)
 
 	cardBackStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(blackColor).
+			BorderForeground(grayColor).
 			Background(lipgloss.Color("#0052CC")).
 			Foreground(whiteColor).
 			Width(5).
@@ -55,12 +55,10 @@ var (
 var (
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(goldColor).
-			MarginBottom(1)
+			Foreground(goldColor)
 
 	statsStyle = lipgloss.NewStyle().
-			Foreground(whiteColor).
-			MarginBottom(1)
+			Foreground(whiteColor)
 
 	helpStyle = lipgloss.NewStyle().
 			Foreground(grayColor).

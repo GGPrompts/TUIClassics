@@ -1,8 +1,6 @@
 package solitaire
 
 import (
-	"fmt"
-
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -30,21 +28,17 @@ func (m Model) handleMouseEvent(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// handleMousePress handles mouse button press (start drag)
+// handleMousePress handles mouse button press (start drag or select)
 func (m Model) handleMousePress(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
-	// DEBUG: Print mouse coordinates to help debug hit detection
-	// TODO: Remove this debug output once mouse detection is fixed
-	fmt.Printf("\nDEBUG: Mouse click at X=%d, Y=%d (Terminal: %dx%d)\n",
-		msg.X, msg.Y, m.termWidth, m.termHeight)
+	// Store press position to detect click vs drag
+	m.mousePressX = msg.X
+	m.mousePressY = msg.Y
 
 	// Determine which pile was clicked
 	location := m.getPileAtPosition(msg.X, msg.Y)
 	if location == nil {
-		fmt.Printf("DEBUG: No pile detected at this position\n")
 		return m, nil
 	}
-
-	fmt.Printf("DEBUG: Detected pile type=%v, index=%d\n", location.PileType, location.PileIndex)
 
 	// If stock was clicked, draw a card
 	if location.PileType == StockPile {
@@ -52,7 +46,7 @@ func (m Model) handleMousePress(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	// Start dragging a card
+	// Prepare card for potential drag or selection
 	var card *Card
 	var cards []Card
 	var cardIndex int
@@ -93,6 +87,7 @@ func (m Model) handleMousePress(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 	}
 
 	if card != nil {
+		// Set up drag state (will be used if mouse moves)
 		m.draggingCard = card
 		m.draggingCards = cards
 		m.dragFromPile = location
@@ -102,28 +97,49 @@ func (m Model) handleMousePress(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// handleMouseRelease handles mouse button release (drop card)
+// handleMouseRelease handles mouse button release (drop card or select)
 func (m Model) handleMouseRelease(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 	if m.draggingCard == nil {
 		return m, nil
 	}
 
-	// Determine where the card was dropped
-	location := m.getPileAtPosition(msg.X, msg.Y)
-	if location != nil && m.dragFromPile != nil {
-		// Attempt to move the cards
-		success := m.MoveCards(*m.dragFromPile, *location, m.draggingCards)
+	// Calculate distance moved since press
+	dx := msg.X - m.mousePressX
+	dy := msg.Y - m.mousePressY
+	distanceMoved := dx*dx + dy*dy
 
-		if success {
-			// Check win condition
-			if m.CheckWin() {
-				m.state = StateWon
-				m.elapsedTime = m.elapsedTime
-				m.StartWaterfallAnimation()
-				m.draggingCard = nil
-				m.draggingCards = nil
-				m.dragFromPile = nil
-				return m, animationTick()
+	// If mouse didn't move much, treat as click (select for keyboard movement)
+	// Otherwise treat as drag-and-drop
+	if distanceMoved < 4 { // Threshold: less than 2 pixels in any direction
+		// Click to select - set keyboard selection state
+		if m.dragFromPile != nil {
+			m.selectedPile = m.dragFromPile
+			m.selectedCard = m.draggingCard
+			m.selectedIndex = m.dragFromIndex
+			// Update cursor to match selection
+			m.cursor = *m.dragFromPile
+		}
+	} else {
+		// Drag-and-drop - attempt to move the cards
+		location := m.getPileAtPosition(msg.X, msg.Y)
+		if location != nil && m.dragFromPile != nil {
+			success := m.MoveCards(*m.dragFromPile, *location, m.draggingCards)
+
+			if success {
+				// Clear selection after successful move
+				m.selectedPile = nil
+				m.selectedCard = nil
+
+				// Check win condition
+				if m.CheckWin() {
+					m.state = StateWon
+					m.elapsedTime = m.elapsedTime
+					m.StartWaterfallAnimation()
+					m.draggingCard = nil
+					m.draggingCards = nil
+					m.dragFromPile = nil
+					return m, animationTick()
+				}
 			}
 		}
 	}
@@ -175,31 +191,65 @@ func (m Model) handleRightClick(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 
 // getPileAtPosition determines which pile is at the given screen position
 func (m *Model) getPileAtPosition(x, y int) *CursorLocation {
-	// Layout: Title(1) + margin(1) + \n\n(2) + Stats(1) + margin(1) + \n\n(2) = 8 lines
-	// Then: TopRow(5) + \n\n(2) = 7 more lines
-	// Total before tableau: 15 lines
+	// Calculate padding (must match viewGame() rendering logic)
+	maxTableauHeight := 0
+	for _, pile := range m.tableau {
+		height := 0
+		if len(pile.Cards) > 0 {
+			height = (len(pile.Cards)-1)*2 + 5
+		} else {
+			height = 5
+		}
+		if height > maxTableauHeight {
+			maxTableauHeight = height
+		}
+	}
 
-	// Make hit detection forgiving - allow clicks a bit before/after expected positions
-	const topRowStartY = 4   // Start checking earlier
-	const topRowHeight = 10  // Wider range to catch clicks
-	const tableauStartY = 11 // Start checking earlier for tableau too
+	totalLines := 1 + 2 + 1 + 2 + 5 + 2 + maxTableauHeight + 1 + 1
+	topPadding := (m.termHeight - totalLines) / 2
+	if topPadding < 0 {
+		topPadding = 0
+	}
+
+	contentWidth := 7 * 7
+	leftPadding := (m.termWidth - contentWidth) / 2
+	if leftPadding < 0 {
+		leftPadding = 0
+	}
+
+	// Adjust mouse coordinates for padding
+	relX := x - leftPadding
+	relY := y - topPadding
+
+	// Match rendering logic from viewGame():
+	// Line 0: Title
+	// Line 1: blank (from "\n\n")
+	// Line 2: Stats
+	// Line 3: blank (from "\n\n")
+	// Lines 4-8: TopRow (cards are 5 lines: border + 3 content + border)
+	// Line 9: blank (from "\n\n")
+	// Line 10+: Tableau
+
+	const topRowStartY = 4   // Top row starts at line 4 (relative to content)
+	const topRowHeight = 5   // Cards are 5 lines tall
+	const tableauStartY = 10 // Tableau starts at line 10 (relative to content)
 
 	// Top row (stock, waste, foundation) - wider Y range for better detection
-	if y >= topRowStartY && y < topRowStartY+topRowHeight {
+	if relY >= topRowStartY && relY < topRowStartY+topRowHeight {
 		// Stock pile: X = 0-7
-		if x >= 0 && x <= 7 {
+		if relX >= 0 && relX <= 7 {
 			return &CursorLocation{PileType: StockPile, PileIndex: 0}
 		}
 
 		// Waste pile: X = 7-14
-		if x >= 7 && x <= 14 {
+		if relX >= 7 && relX <= 14 {
 			return &CursorLocation{PileType: WastePile, PileIndex: 0}
 		}
 
 		// Foundation piles: X starts around 17 (with spacing)
 		// Each pile is 7 chars wide
-		if x >= 17 {
-			foundationIndex := (x - 17) / 7
+		if relX >= 17 {
+			foundationIndex := (relX - 17) / 7
 			if foundationIndex >= 0 && foundationIndex < 4 {
 				return &CursorLocation{PileType: FoundationPile, PileIndex: foundationIndex}
 			}
@@ -207,9 +257,9 @@ func (m *Model) getPileAtPosition(x, y int) *CursorLocation {
 	}
 
 	// Tableau piles start at tableauStartY
-	if y >= tableauStartY {
+	if relY >= tableauStartY {
 		// Each tableau pile is 7 chars wide
-		tableauIndex := x / 7
+		tableauIndex := relX / 7
 		if tableauIndex >= 0 && tableauIndex < 7 {
 			return &CursorLocation{PileType: TableauPile, PileIndex: tableauIndex}
 		}
@@ -223,15 +273,36 @@ func (m *Model) getTableauCardIndex(pileIndex, y int) int {
 	// With stacking: each card except the last shows 2 lines (top border + first content line)
 	// The last card shows full (5 lines total)
 
-	const tableauStartY = 15
+	// Calculate padding to adjust Y coordinate
+	maxTableauHeight := 0
+	for _, pile := range m.tableau {
+		height := 0
+		if len(pile.Cards) > 0 {
+			height = (len(pile.Cards)-1)*2 + 5
+		} else {
+			height = 5
+		}
+		if height > maxTableauHeight {
+			maxTableauHeight = height
+		}
+	}
+
+	totalLines := 1 + 2 + 1 + 2 + 5 + 2 + maxTableauHeight + 1 + 1
+	topPadding := (m.termHeight - totalLines) / 2
+	if topPadding < 0 {
+		topPadding = 0
+	}
+
+	const tableauStartY = 10 // Must match getPileAtPosition (relative to content)
 	pile := m.tableau[pileIndex]
 
 	if len(pile.Cards) == 0 {
 		return -1
 	}
 
-	// Calculate which card was clicked based on Y position
-	cardOffset := y - tableauStartY
+	// Calculate which card was clicked based on Y position (adjusted for padding)
+	relY := y - topPadding
+	cardOffset := relY - tableauStartY
 	if cardOffset < 0 {
 		return -1
 	}

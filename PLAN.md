@@ -37,13 +37,13 @@ Bring classic Windows 95/XP games to the terminal with:
 
 ---
 
-## 🚧 Phase 2: Solitaire (Klondike)
+## ✅ Phase 2: Solitaire (Klondike)
 
-**Target**: v0.2.0
+**Status**: v0.2.0 - Feature complete with waterfall animation
 
 **Priority**: High - Most requested classic game after Minesweeper
 
-**Current Status** (2025-01-20): ~85% complete, debugging mouse drag-and-drop
+**Current Status** (2025-01-21): 100% complete, all features working
 
 ### Core Gameplay
 
@@ -55,20 +55,23 @@ Bring classic Windows 95/XP games to the terminal with:
 - [x] Draw-1 mode (working)
 - [ ] Draw-3 mode toggle (planned)
 
-### Input Methods
+### Input Methods ✅ COMPLETE
 
 **Mouse** (Primary):
-- [ ] ⚠️ Click card to select (BLOCKED - debugging coordinate offset)
-- [ ] ⚠️ Drag-and-drop between piles (BLOCKED - debugging coordinate offset)
-- [x] Right-click to auto-move to foundation (WORKS)
-- [x] Click stock to draw card (WORKS)
+- [x] Click-to-select (select with mouse, move with keyboard)
+- [x] Drag-and-drop between piles (full visual feedback)
+- [x] Right-click to auto-move to foundation
+- [x] Click stock to draw card
+- [x] Gold border shows selected/dragging cards
+- [x] Accurate coordinate detection (centered layout)
 
 **Keyboard** (Accessibility):
-- [x] Arrow keys to navigate cards (WORKS)
-- [x] Enter to pick up/drop card (WORKS)
-- [x] Number keys (1-4) for quick foundation moves (WORKS)
-- [x] Space to draw from stock (WORKS)
-- [ ] U for undo (planned)
+- [x] Arrow keys to navigate cards
+- [x] Enter to pick up/drop card
+- [x] Number keys (1-4) for quick foundation moves
+- [x] Space to draw from stock
+- [x] **W key** - Secret waterfall animation trigger
+- [ ] U for undo (future enhancement)
 
 ### Card Rendering ✅ COMPLETE
 
@@ -98,11 +101,11 @@ Actual rendering:
 - ✅ Stacked cards match full card width
 - ✅ No clipped symbols (hearts render correctly)
 
-**Known Issue**:
-- ⚠️ Black borders invisible on black terminal backgrounds
-- Borders use `blackColor` which blends into black terminal backgrounds
-- Makes rounded corners appear square
-- **Fix needed**: Change border colors to white or gray for visibility
+**Fixed Issues**:
+- ✅ Gray borders now visible on all terminal backgrounds
+- ✅ Mouse coordinates accurate with centered layout
+- ✅ Cursor visible on empty foundation/tableau piles
+- ✅ Hybrid mouse+keyboard workflow (click to select, arrows to move)
 
 ### Animations
 
@@ -110,13 +113,16 @@ Actual rendering:
 
 **The Signature Feature!**
 
-When all cards are moved to foundation:
-1. ✅ Cards cascade down from top of screen
-2. ✅ Each card has random horizontal velocity
-3. ✅ Gravity pulls them down
-4. ✅ Bounce off bottom with decreasing elasticity
-5. ✅ Cards continue moving after bounce
-6. ✅ After animation completes, show "You Won!" screen
+When all cards are moved to foundation (or press **W** to test):
+1. ✅ All visible cards cascade down from top of screen
+2. ✅ Full card boxes with rounded borders
+3. ✅ Random horizontal velocity and spread
+4. ✅ Gravity pulls them down
+5. ✅ Bounce off bottom with decreasing elasticity
+6. ✅ Cards continue moving after bounce
+7. ✅ After animation completes, show "You Won!" screen
+8. ✅ Plain-text rendering (no ANSI artifacts)
+9. ✅ Single-width suit letters (S/H/D/C) for perfect alignment
 
 **Implementation**:
 ```go
@@ -167,29 +173,15 @@ Tick rate: 60fps (16ms) for smooth animation
 - [x] Can only move fully revealed card sequences
 - [x] Stock cycles through deck (Draw-1 working)
 
-### ⚠️ Current Blocker: Mouse Coordinate Offset
+### Layout & Centering ✅ COMPLETE
 
-**Issue**: Mouse Y coordinates have massive offset (~78 lines)
-- Clicking waste pile (expected Y=8) reports Y=86
-- Clicking tableau card (expected Y=15) reports Y=26
-- Stock pile left-click works (drawing cards)
-- Right-click auto-move works (can send cards to foundation)
-- **Drag-and-drop completely broken** - can't select/move tableau cards
-
-**Debug Findings**:
-- Cards render at 7 chars wide × 5 lines tall ✅
-- Changed from `tea.WithMouseCellMotion()` to `tea.WithMouseAllMotion()` (matching minesweeper)
-- Added debug output showing click X,Y coordinates
-- Offsets don't match any consistent pattern (86-8=78, but 26-15=11)
-
-**Next Debugging Steps**:
-1. Check terminal size from debug output (Terminal: WxH)
-2. Determine if game is being vertically centered despite no `lipgloss.Place`
-3. Compare mouse event handling with minesweeper (which works correctly)
-4. Consider if WSL/terminal emulator is adding offset
-5. May need to subtract a calculated offset based on terminal height
-
-**Workaround**: Keyboard controls work perfectly for gameplay
+**Implementation**: Manual centering (like Minesweeper) for deterministic mouse coordinates
+- ✅ Centered vertically and horizontally
+- ✅ Title, stats, help text use lipgloss `.Width().Align()`
+- ✅ Game board uses manual left padding (per-line)
+- ✅ Mouse coordinates adjusted for padding offsets
+- ✅ Responsive to terminal resize
+- ✅ Requests `tea.WindowSize()` on init for immediate centering
 
 ### UI Layout
 
@@ -253,51 +245,62 @@ Classic Windows Solitaire scoring:
 
 ---
 
-## 🔮 Phase 3: Game Launcher
+## ✅ Phase 3: Game Launcher (Complete)
 
-**Target**: v0.3.0
+**Status**: v0.3.0 - Feature complete
 
 **Purpose**: Unified menu to select which game to play
 
 ### Features
 
-- [ ] Main menu showing all available games
-- [ ] High scores for each game
-- [ ] Last played indicator
-- [ ] Keyboard shortcuts (M for Minesweeper, S for Solitaire)
-- [ ] Beautiful title screen
+- [x] Main menu showing all available games
+- [x] Keyboard shortcuts (M for Minesweeper, S for Solitaire, T for Tanks)
+- [x] Beautiful title screen with gold/blue color scheme
+- [x] Navigation with arrow keys and vim keys (j/k)
+- [x] ESC to return from game to menu
+- [ ] High scores for each game (planned for future)
+- [ ] Last played indicator (planned for future)
 
 ### Binary: `classics`
 
+**Launch**: `./bin/classics` or `make run-classics`
+
+**Actual Implementation**:
 ```
-┌─ Terminal Classics ───────────────────────────────────────┐
-│                                                            │
-│                   🎮 TERMINAL CLASSICS 🎮                  │
-│                                                            │
-│              Nostalgic games for your terminal             │
-│                                                            │
-│   ┌────────────────────────────────────────────────────┐  │
-│   │  *  Minesweeper          [M]                       │  │
-│   │      Clear the minefield without exploding         │  │
-│   │      Best time: 1:23  |  Games played: 47          │  │
-│   ├────────────────────────────────────────────────────┤  │
-│   │  ♠  Solitaire            [S]                       │  │
-│   │      Classic Klondike card game                    │  │
-│   │      Best score: 3,245  |  Win rate: 23%           │  │
-│   ├────────────────────────────────────────────────────┤  │
-│   │  🐍  Snake               [N]  (Coming Soon!)       │  │
-│   │      Eat apples, grow longer, don't crash          │  │
-│   └────────────────────────────────────────────────────┘  │
-│                                                            │
-│            Press key to play, or Q to quit                 │
-│                                                            │
-└────────────────────────────────────────────────────────────┘
+TUI CLASSICS
+Classic Terminal Games Collection
+
+[m] Minesweeper
+    Classic mine-finding puzzle game
+
+[s] Solitaire
+    Klondike card game (Work in Progress)
+
+[t] Tanks
+    Coming soon...
+
+↑/↓: Navigate  •  Enter/Hotkey: Select  •  q: Quit
 ```
+
+**Features**:
+- Centered menu with gold/blue color scheme
+- Selected item highlighting
+- Disabled state for unimplemented games
+- ESC returns from game to menu
+- Seamless transitions without exiting app
 
 **File Structure**:
 ```
 cmd/classics/
-└── main.go          (Launcher menu, detect available games)
+└── main.go          (21 lines - launches menu)
+
+games/menu/
+├── types.go         (MenuState, GameInfo structs)
+├── model.go         (Menu initialization, game launching)
+├── view.go          (Menu rendering)
+├── styles.go        (Color scheme and styling)
+├── update.go        (Message routing, game delegation)
+└── update_keyboard.go (Navigation, selection)
 ```
 
 ---
@@ -478,45 +481,42 @@ Reusable patterns for:
 
 ### Solitaire Completion (v0.2.0)
 
-**Priority 1: Fix Mouse Drag-and-Drop** 🔴
+**Priority 1: Fix Card Border Visibility** 🔴
+1. Change card border color from black to white/gray/cyan (visible on black terminals)
+2. Test on black terminal background to confirm visibility
+3. Ensure rounded corners are clearly visible
+
+**Priority 2: Fix Mouse Drag-and-Drop** 🔴
 1. Test with debug output to capture terminal dimensions
 2. Identify source of Y coordinate offset (86 vs expected 8)
-3. Add offset compensation or fix coordinate calculation
-4. Verify drag-and-drop works across all piles
-5. Remove debug output once fixed
+3. Compare coordinate calculation with Minesweeper (which works correctly)
+4. Add offset compensation or fix coordinate calculation
+5. Verify drag-and-drop works across all piles
+6. Remove debug output once fixed
 
-**Priority 2: Polish & Testing** 🟡
-1. Fix card border visibility on black backgrounds (change from black to white/gray)
-2. Add undo functionality (keyboard U key)
-3. Implement Draw-3 mode toggle
-4. Test on multiple terminals (Alacritty, iTerm2, Windows Terminal)
-5. Verify all animations work smoothly
-6. Clean up any remaining TODOs in code
+**Priority 3: Polish & Testing** 🟡
+1. Add undo functionality (keyboard U key)
+2. Implement Draw-3 mode toggle
+3. Test on multiple terminals (Alacritty, iTerm2, Windows Terminal)
+4. Verify all animations work smoothly
+5. Clean up any remaining TODOs in code
 
-**Priority 3: Documentation** 🟢
+**Priority 4: Documentation** 🟢
 1. Add screenshots/GIFs to README
 2. Document controls clearly
 3. Add troubleshooting section for mouse issues
 4. Update CHANGELOG with v0.2.0 release notes
 
-### Phase 3: Game Launcher (v0.3.0)
-
-1. Create `cmd/classics/main.go`
-2. Design unified menu
-3. Integrate high scores
-4. Test launching both games
-5. Add game selection shortcuts
-
 ---
 
 **Created**: 2025-01-20
-**Last Updated**: 2025-01-20 (Evening session - mouse debugging)
+**Last Updated**: 2025-10-20 (Launcher complete!)
 **Owner**: GGPrompts
 
 **Status**:
 - ✅ Minesweeper complete (v0.1.0) - No known bugs
 - 🚧 Solitaire ~85% complete (v0.2.0) - Mouse drag blocked, keyboard works perfectly
-- 📋 Launcher planned (v0.3.0)
+- ✅ Launcher complete (v0.3.0) - Main menu working with game selection
 
 **Session Notes**:
 - Fixed card sizing/alignment issues (all cards now consistent dimensions)
@@ -524,3 +524,8 @@ Reusable patterns for:
 - Waterfall animation complete and working
 - Discovered mouse coordinate offset bug - needs investigation
 - Game is fully playable via keyboard controls
+- **NEW (2025-10-20)**: Built unified game launcher menu (Phase 3 complete!)
+  - Main menu with game selection
+  - ESC to return from games to menu
+  - Gold/blue color scheme
+  - Seamless transitions between menu and games
