@@ -14,132 +14,252 @@ func (m Model) handleMouseEvent(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	switch msg.Type {
-	case tea.MouseLeft:
-		return m.handleLeftClick(msg)
+	// Dispatch based on game phase
+	switch m.gamePhase {
+	case PhaseSelectCards:
+		return m.handleGamePhaseMouseEvent(msg)
+	case PhaseShop:
+		return m.handleShopPhaseMouseEvent(msg)
+	default:
+		return m, nil
+	}
+}
 
-	case tea.MouseRight:
-		return m.handleRightClick(msg)
+// handleGamePhaseMouseEvent handles mouse events during card selection phase
+func (m Model) handleGamePhaseMouseEvent(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
+	switch msg.Button {
+	case tea.MouseButtonLeft:
+		if msg.Action == tea.MouseActionPress {
+			m.mousePressX = msg.X
+			m.mousePressY = msg.Y
+		} else if msg.Action == tea.MouseActionRelease {
+			// Check if this was a click (not a drag)
+			dx := msg.X - m.mousePressX
+			dy := msg.Y - m.mousePressY
+			distanceMoved := dx*dx + dy*dy
 
-	case tea.MouseWheelUp:
-		return m.handleWheelUp(msg)
-
-	case tea.MouseWheelDown:
-		return m.handleWheelDown(msg)
-
-	case tea.MouseMotion:
-		// Handle mouse motion if needed (for hover effects)
-		return m.handleMouseMotion(msg)
+			if distanceMoved < 4 { // Threshold: less than 2 pixels
+				// Handle click on hand cards
+				cardIndex := m.getCardAtPosition(msg.X, msg.Y)
+				if cardIndex >= 0 && cardIndex < len(m.hand) {
+					// Toggle card for play (same as space key)
+					m.selectedCardIndex = cardIndex
+					m.toggleCardForPlay(cardIndex)
+					return m, nil
+				}
+			}
+		}
 	}
 
 	return m, nil
 }
 
-// handleLeftClick handles left mouse button clicks
-func (m Model) handleLeftClick(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
-	x, y := msg.X, msg.Y
+// handleShopPhaseMouseEvent handles mouse events during shop phase
+func (m Model) handleShopPhaseMouseEvent(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
+	switch msg.Button {
+	case tea.MouseButtonLeft:
+		if msg.Action == tea.MouseActionPress {
+			m.mousePressX = msg.X
+			m.mousePressY = msg.Y
+		} else if msg.Action == tea.MouseActionRelease {
+			// Check if this was a click (not a drag)
+			dx := msg.X - m.mousePressX
+			dy := msg.Y - m.mousePressY
+			distanceMoved := dx*dx + dy*dy
 
-	// Check if click is in a specific region
-	// Example: check if clicked on an item in a list
-	// if m.isInItemList(x, y) {
-	//     itemIndex := m.getItemIndexAt(y)
-	//     if itemIndex >= 0 && itemIndex < len(m.items) {
-	//         m.cursor = itemIndex
-	//         return m.selectItem()
-	//     }
-	// }
+			if distanceMoved < 4 { // Threshold: less than 2 pixels
+				// Check if clicked on a shop joker
+				jokerIndex := m.getShopJokerAtPosition(msg.X, msg.Y)
+				if jokerIndex >= 0 && jokerIndex < len(m.shopJokers) {
+					m.selectedShopItem = jokerIndex
+					return m, nil
+				}
 
-	// Check if clicked on UI elements
-	if m.isInTitleBar(x, y) {
-		return m.handleTitleBarClick(x, y)
+				// Check if clicked on "Buy" action (Enter key equivalent)
+				// For now, we'll trigger buy when clicking on a selected joker again
+				if jokerIndex == m.selectedShopItem && jokerIndex >= 0 {
+					return m.handleShopPurchase()
+				}
+			}
+		}
 	}
 
-	if m.isInStatusBar(x, y) {
-		return m.handleStatusBarClick(x, y)
+	return m, nil
+}
+
+// getCardAtPosition calculates which card in the hand was clicked
+func (m Model) getCardAtPosition(x, y int) int {
+	if len(m.hand) == 0 {
+		return -1
 	}
 
-	// Add your application-specific click handlers here
+	// Calculate content dimensions and padding
+	// This must match the rendering logic in renderGameView()
 
-	return m, nil
-}
+	// Build sections to calculate content height (must match view.go)
+	lineCount := 0
 
-// handleRightClick handles right mouse button clicks
-func (m Model) handleRightClick(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
-	x, y := msg.X, msg.Y
+	// Game info (1 line) + blank
+	lineCount += 2
 
-	// Example: show context menu
-	// return m.showContextMenu(x, y)
-
-	_ = x
-	_ = y
-	return m, nil
-}
-
-// handleWheelUp handles mouse wheel scroll up
-func (m Model) handleWheelUp(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
-	// Scroll up in the focused component
-	return m.moveUp()
-}
-
-// handleWheelDown handles mouse wheel scroll down
-func (m Model) handleWheelDown(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
-	// Scroll down in the focused component
-	return m.moveDown()
-}
-
-// handleMouseMotion handles mouse movement (for hover effects)
-func (m Model) handleMouseMotion(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
-	// Example: highlight hovered item
-	// x, y := msg.X, msg.Y
-	// if m.isInItemList(x, y) {
-	//     m.hoveredItem = m.getItemIndexAt(y)
-	// }
-	return m, nil
-}
-
-// Helper functions for click region detection
-
-func (m Model) isInTitleBar(x, y int) bool {
-	if !m.config.UI.ShowTitle {
-		return false
+	// Jokers (if any): label (1) + cards (varies) + blank
+	if len(m.jokers) > 0 {
+		lineCount += 1 + 5 + 1 // label + joker height + blank
 	}
-	return y < 2
-}
 
-func (m Model) isInStatusBar(x, y int) bool {
-	if !m.config.UI.ShowStatus {
-		return false
+	// Hand display: cards (3) + numbers (1) + blank
+	lineCount += 5 // Includes centering wrapper
+
+	// Selected card detail (if visible): varies
+	if m.selectedCardIndex >= 0 && m.selectedCardIndex < len(m.hand) {
+		lineCount += 7 + 1 // Card detail panel + blank
 	}
-	return y >= m.height-1
+
+	// Current hand info (always present now): 1 line + blank
+	lineCount += 2
+
+	// Score breakdown (if visible)
+	if m.lastScore.FinalScore > 0 {
+		lineCount += 5 + 1 // Score panel + blank
+	}
+
+	// Controls: 1 line
+	lineCount += 1
+
+	// Calculate padding
+	availableHeight := m.height - 2 // -2 for title and status bars
+	topPadding := 0
+	if lineCount < availableHeight {
+		topPadding = (availableHeight - lineCount) / 2
+	}
+
+	// Add title bar offset
+	if m.config.UI.ShowTitle {
+		topPadding += 1
+	}
+
+	// Calculate Y position of hand display
+	handY := topPadding
+	handY += 2 // game info + blank
+	if len(m.jokers) > 0 {
+		handY += 1 + 5 + 1 // jokers section
+	}
+
+	// Check if click is in hand area (cards are 3 lines tall + 1 line for numbers)
+	if y < handY || y >= handY+4 {
+		return -1
+	}
+
+	// Calculate horizontal position
+	// Each card is 7 chars wide (5 for card + 2 spacing from join)
+	cardWidth := 7
+	totalHandWidth := len(m.hand) * cardWidth
+
+	// Hand is centered horizontally
+	leftPadding := (m.width - totalHandWidth) / 2
+
+	// Adjust for padding
+	relX := x - leftPadding
+
+	if relX < 0 || relX >= totalHandWidth {
+		return -1
+	}
+
+	// Calculate which card was clicked
+	cardIndex := relX / cardWidth
+
+	if cardIndex >= 0 && cardIndex < len(m.hand) {
+		return cardIndex
+	}
+
+	return -1
 }
 
-func (m Model) handleTitleBarClick(x, y int) (tea.Model, tea.Cmd) {
-	// Example: click on breadcrumb navigation
-	// or click on window control buttons
-	_ = x
-	_ = y
+// getShopJokerAtPosition calculates which shop joker was clicked
+func (m Model) getShopJokerAtPosition(x, y int) int {
+	if len(m.shopJokers) == 0 {
+		return -1
+	}
+
+	// Shop screen is centered with lipgloss.Place
+	// We need to calculate the position of shop jokers
+
+	// Shop jokers are rendered starting around line 900 in view.go
+	// Each joker is 22 chars wide + 2 margin right = 24 chars total
+	// Jokers are 6 lines tall
+
+	// Calculate vertical position
+	// Shop layout: title(1) + blank(1) + money(1) + blank(1) + next blind(1) + blank(1) + label(1) + blank(1) + jokers(6)
+	// = 13 lines to start of jokers
+
+	// The shop is centered on screen
+	// We need to calculate content height
+	contentHeight := 13 + 6 // Simplified - actual height varies
+	topPadding := (m.height - contentHeight) / 2
+
+	jokersStartY := topPadding + 8 // After title, money, next blind, label
+
+	// Check if click is in joker area
+	if y < jokersStartY || y >= jokersStartY+6 {
+		return -1
+	}
+
+	// Calculate horizontal position
+	// Each joker is 24 chars wide (22 + 2 margin)
+	jokerWidth := 24
+	totalWidth := len(m.shopJokers) * jokerWidth
+
+	leftPadding := (m.width - totalWidth) / 2
+	relX := x - leftPadding
+
+	if relX < 0 || relX >= totalWidth {
+		return -1
+	}
+
+	jokerIndex := relX / jokerWidth
+
+	if jokerIndex >= 0 && jokerIndex < len(m.shopJokers) {
+		return jokerIndex
+	}
+
+	return -1
+}
+
+// handleShopPurchase attempts to buy the selected shop joker
+func (m Model) handleShopPurchase() (tea.Model, tea.Cmd) {
+	if m.selectedShopItem < 0 || m.selectedShopItem >= len(m.shopJokers) {
+		return m, nil
+	}
+
+	joker := m.shopJokers[m.selectedShopItem]
+	cost := joker.GetCost()
+
+	// Check if player can afford it
+	if m.roundState.Money < cost {
+		m.statusMsg = "Not enough money!"
+		return m, nil
+	}
+
+	// Check if player has room for more jokers (max 5)
+	if len(m.jokers) >= 5 {
+		m.statusMsg = "Maximum jokers reached (5/5)"
+		return m, nil
+	}
+
+	// Purchase the joker
+	m.roundState.Money -= cost
+	m.jokers = append(m.jokers, joker)
+
+	// Remove from shop
+	m.shopJokers = append(m.shopJokers[:m.selectedShopItem], m.shopJokers[m.selectedShopItem+1:]...)
+
+	// Reset selection
+	m.selectedShopItem = -1
+	if len(m.shopJokers) > 0 {
+		m.selectedShopItem = 0
+	}
+
+	m.statusMsg = "Purchased joker!"
+
 	return m, nil
-}
-
-func (m Model) handleStatusBarClick(x, y int) (tea.Model, tea.Cmd) {
-	// Example: click on status bar items
-	_ = x
-	_ = y
-	return m, nil
-}
-
-// Double-click detection (if needed)
-type clickTracker struct {
-	lastClickX    int
-	lastClickY    int
-	lastClickTime int64
-}
-
-var tracker clickTracker
-
-func (m Model) isDoubleClick(msg tea.MouseMsg) bool {
-	// Implement double-click detection
-	// Compare with tracker.lastClickTime
-	// Reset tracker.lastClickX, tracker.lastClickY, tracker.lastClickTime
-	return false
 }

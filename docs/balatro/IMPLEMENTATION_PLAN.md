@@ -1,8 +1,36 @@
 # Balatro TUI - Implementation Plan
 
-**Status**: Planning Phase
+**Status**: Phase 3 Complete + UI Polish Added ✅
 **Timeline**: 4-5 weeks to MVP + polish
 **Estimated Size**: 3,000-4,000 LOC
+**Current LOC**: ~2,800 LOC
+
+---
+
+## 🎉 Latest Updates (Current Session)
+
+### Phase 3: COMPLETE ✅
+- ✅ Joker system fully implemented
+- ✅ Enhanced scoring engine with joker effects
+- ✅ Card enhancements working (Bonus, Mult, Glass, Steel, Stone, Gold, Lucky)
+- ✅ Card editions working (Foil, Holographic, Polychrome)
+- ✅ Card seals system implemented
+- ✅ Shop with joker purchasing
+- ✅ Score breakdown showing all modifiers
+
+### UI Polish: COMPLETE ✅
+- ✅ **Color-coded game info header** (Hands in blue, Discards in red) - view.go:371-415
+- ✅ **Reserved space for hand info** - Prevents UI jumping when selecting cards - view.go:684-685
+- ✅ **Full mouse support for card selection** - Click cards to toggle for play - update_mouse.go:28-54
+- ✅ **Full mouse support for shop** - Click jokers to select/buy - update_mouse.go:57-86
+- ✅ **Coordinate calculation patterns** - Following CLAUDE.md patterns from solitaire
+
+### Mouse Implementation Details
+- Uses click vs drag detection (< 2 pixel movement = click)
+- Coordinate calculations match rendering logic exactly
+- Phase-aware handling (game phase vs shop phase)
+- Mouse state tracking in Model (mousePressX, mousePressY)
+- Shop joker selection and purchasing with visual feedback
 
 ---
 
@@ -484,9 +512,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 ---
 
-## Phase 3: Jokers & Effects - ~800 LOC
+## Phase 3: Jokers & Effects - ~800 LOC ✅ COMPLETE
 
-### Week 3: Add the Magic
+### Week 3: Add the Magic ✅
 
 #### 3.1 Joker System (~300 LOC)
 **File**: `jokers.go`
@@ -956,24 +984,26 @@ Instant effects on cards:
 
 ## Success Criteria
 
-### MVP (End of Week 2)
+### MVP (End of Week 2) ✅ COMPLETE
 - ✅ Can play poker hands
 - ✅ Blinds and progression work
 - ✅ Scoring is correct
 - ✅ Game over on loss
 - ✅ Basic UI
 
-### Playable (End of Week 4)
-- ✅ Jokers modify gameplay
-- ✅ Shop works
+### Playable (End of Week 4) ✅ COMPLETE
+- ✅ Jokers modify gameplay (15+ jokers implemented)
+- ✅ Shop works (buy jokers, manage money)
 - ✅ Can beat multiple antes
 - ✅ Economy system functional
 
-### Polished (End of Week 5)
-- ✅ Animations smooth
+### Polished (End of Week 5) 🚧 IN PROGRESS
+- ⏳ Animations smooth (scoring animation needed)
 - ✅ UI responsive and beautiful
-- ✅ Mouse + keyboard input
-- ✅ 10-15 jokers implemented
+- ✅ Mouse + keyboard input (COMPLETE - both card selection and shop)
+- ✅ 15+ jokers implemented
+- ✅ Color-coded UI elements
+- ✅ Stable layout (no UI jumping)
 
 ### Feature Complete (Week 6+)
 - ✅ 20-30 jokers
@@ -986,9 +1016,58 @@ Instant effects on cards:
 
 ## Next Steps
 
-1. **Phase 1 implementation** - Get poker hands working
-2. **Test poker evaluation** - Unit tests for all hand types
-3. **Implement basic UI** - Reuse solitaire patterns
-4. **Iterate** - Playtest and refine
+### Immediate Priorities (Next Session)
+1. **Scoring Animation** (~300 LOC) - Add smooth scoring animations like Phase 5.1
+   - Chip counter animation
+   - Mult counter animation
+   - Progressive modifier reveal
+   - Final score calculation display
 
-Let's build something amazing! 🚀
+2. **Boss Blind Effects** (~200 LOC) - Implement special boss blind mechanics
+   - "The Hook" - Disables 2 random Jokers
+   - "The Ox" - Sets money to $0 after beating blind
+   - "The House" - First hand drawn face down
+   - "The Plant" - All face cards debuffed
+
+3. **More Jokers** (~300 LOC) - Expand to 30+ jokers
+   - Retrigger effects
+   - Money-generating jokers
+   - Card-modifying jokers
+   - Conditional multipliers
+
+### Medium Term (Future Sessions)
+4. **Planet Cards** (~150 LOC) - Level up poker hands
+5. **Tarot Cards** (~150 LOC) - Card modification system
+6. **Booster Packs** (~200 LOC) - Pack opening system
+7. **Vouchers** (~150 LOC) - Permanent upgrades
+
+### Long Term (Post-MVP)
+8. **Save/Load System** - Persist game state
+9. **Statistics Tracking** - Best runs, total hands played
+10. **Daily Challenge** - Seeded runs
+
+---
+
+## Current Status Summary
+
+**What's Working**: ✅
+- Complete poker hand evaluation
+- Full blind progression system (Small → Big → Boss)
+- 15+ jokers with varied effects
+- Card enhancements (Bonus, Mult, Glass, Steel, Stone, Gold, Lucky)
+- Card editions (Foil, Holographic, Polychrome)
+- Card seals system
+- Shop with purchasing
+- Mouse + keyboard input for all interactions
+- Responsive, color-coded UI
+
+**What's Next**: 🚧
+- Scoring animations
+- Boss blind special effects
+- More jokers (30+ target)
+- Planet and Tarot cards
+- Polish and balance
+
+**Game is Playable**: You can play through multiple antes, buy jokers, and experience the core Balatro gameplay loop! 🎉
+
+Let's keep building! 🚀

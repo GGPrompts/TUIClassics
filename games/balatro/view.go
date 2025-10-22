@@ -284,11 +284,9 @@ func (m Model) renderGameView() string {
 		sections = append(sections, "")
 	}
 
-	// Current hand info
-	if len(m.playedCards) > 0 {
-		sections = append(sections, m.renderCurrentHandInfo())
-		sections = append(sections, "")
-	}
+	// Current hand info (always reserve space to prevent UI jumping)
+	sections = append(sections, m.renderCurrentHandInfo())
+	sections = append(sections, "")
 
 	// Score breakdown (if we just scored)
 	if m.lastScore.FinalScore > 0 {
@@ -363,34 +361,58 @@ func (m Model) renderGameView() string {
 // renderGameInfo renders round/score/money info
 func (m Model) renderGameInfo() string {
 	// Phase 2: Use roundState if initialized
-	var info string
+	var parts []string
+
+	// Default style for most text
+	defaultStyle := lipgloss.NewStyle().
+		Foreground(neonColors.Gold).
+		Bold(true)
+
+	// Blue style for Hands
+	handsStyle := lipgloss.NewStyle().
+		Foreground(neonColors.Blue).
+		Bold(true)
+
+	// Red style for Discards
+	discardsStyle := lipgloss.NewStyle().
+		Foreground(neonColors.Red).
+		Bold(true)
+
 	if m.roundState.Ante > 0 {
 		// Show blind name and ante
 		blindName := m.roundState.CurrentBlind.Name
-		info = fmt.Sprintf("%s (Ante %d) | Score: %d/%d | Money: $%d | Hands: %d | Discards: %d",
+		baseInfo := fmt.Sprintf("%s (Ante %d) | Score: %d/%d | Money: $%d | ",
 			blindName,
 			m.roundState.Ante,
 			m.roundState.CurrentScore,
 			m.roundState.TargetScore,
-			m.roundState.Money,
-			m.roundState.HandsRemaining,
-			m.roundState.DiscardsRemaining)
+			m.roundState.Money)
+		parts = append(parts, defaultStyle.Render(baseInfo))
+
+		// Add colored Hands
+		parts = append(parts, handsStyle.Render(fmt.Sprintf("Hands: %d", m.roundState.HandsRemaining)))
+		parts = append(parts, defaultStyle.Render(" | "))
+
+		// Add colored Discards
+		parts = append(parts, discardsStyle.Render(fmt.Sprintf("Discards: %d", m.roundState.DiscardsRemaining)))
 	} else {
 		// Legacy format (fallback)
-		info = fmt.Sprintf("Round %d | Score: %d/%d | Money: $%d | Hands: %d | Discards: %d",
+		baseInfo := fmt.Sprintf("Round %d | Score: %d/%d | Money: $%d | ",
 			m.currentRound,
 			m.currentScore,
 			m.targetScore,
-			m.money,
-			m.handsRemaining,
-			m.discardsRemaining)
+			m.money)
+		parts = append(parts, defaultStyle.Render(baseInfo))
+
+		// Add colored Hands
+		parts = append(parts, handsStyle.Render(fmt.Sprintf("Hands: %d", m.handsRemaining)))
+		parts = append(parts, defaultStyle.Render(" | "))
+
+		// Add colored Discards
+		parts = append(parts, discardsStyle.Render(fmt.Sprintf("Discards: %d", m.discardsRemaining)))
 	}
 
-	style := lipgloss.NewStyle().
-		Foreground(neonColors.Gold).
-		Bold(true)
-
-	return style.Render(info)
+	return strings.Join(parts, "")
 }
 
 // renderJokers renders owned jokers in a compact horizontal display
@@ -656,19 +678,22 @@ func (m Model) renderCardDetail(card Card) string {
 
 // renderCurrentHandInfo shows info about the currently selected cards for play (centered)
 func (m Model) renderCurrentHandInfo() string {
+	var info string
+
 	if len(m.playedCards) == 0 {
-		return ""
+		// Return placeholder to reserve space and prevent UI jumping
+		info = " " // Single space to maintain height
+	} else {
+		handInfo := m.currentHandInfo
+		handName := handInfo.Type.String()
+
+		style := lipgloss.NewStyle().
+			Foreground(neonColors.Magenta).
+			Bold(true)
+
+		info = style.Render(fmt.Sprintf("Selected Hand: %s (%d chips × %d mult)",
+			handName, handInfo.BaseChips, handInfo.BaseMult))
 	}
-
-	handInfo := m.currentHandInfo
-	handName := handInfo.Type.String()
-
-	style := lipgloss.NewStyle().
-		Foreground(neonColors.Magenta).
-		Bold(true)
-
-	info := style.Render(fmt.Sprintf("Selected Hand: %s (%d chips × %d mult)",
-		handName, handInfo.BaseChips, handInfo.BaseMult))
 
 	// Center it
 	return lipgloss.NewStyle().
