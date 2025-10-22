@@ -24,7 +24,7 @@ func (m Model) View() string {
 func (m Model) renderMenu() string {
 	var b strings.Builder
 
-	title := titleStyle.Render("SNAKE")
+	title := titleStyle.Render("🐍 SNAKE")
 	b.WriteString(title)
 	b.WriteString("\n\n")
 
@@ -59,40 +59,40 @@ func (m Model) renderGame() string {
 		padding = 0
 	}
 
-	b.WriteString("+" + strings.Repeat("-", m.width*2) + "+\n")
-	b.WriteString("|" + scoreLine + strings.Repeat(" ", padding) + "|\n")
-	b.WriteString("+" + strings.Repeat("-", m.width*2) + "+\n")
+	b.WriteString("┌" + strings.Repeat("─", m.width*2) + "┐\n")
+	b.WriteString("│" + scoreLine + strings.Repeat(" ", padding) + "│\n")
+	b.WriteString("├" + strings.Repeat("─", m.width*2) + "┤\n")
 
 	// Game board
 	for y := 0; y < m.height; y++ {
-		b.WriteString("|")
+		b.WriteString("│")
 		for x := 0; x < m.width; x++ {
 			point := Point{x, y}
 
 			if point == m.snake[0] {
 				// Snake head
-				b.WriteString(headStyle.Render("@@"))
+				b.WriteString(headStyle.Render("●●"))
 			} else if m.isSnakeBody(point) {
 				// Snake body
-				b.WriteString(bodyStyle.Render("##"))
+				b.WriteString(bodyStyle.Render("●●"))
 			} else if point == m.food {
 				// Food
-				b.WriteString(foodStyle.Render("**"))
+				b.WriteString(foodStyle.Render("◆◆"))
 			} else {
 				// Empty space
 				b.WriteString("  ")
 			}
 		}
-		b.WriteString("|\n")
+		b.WriteString("│\n")
 	}
 
 	// Bottom border
-	b.WriteString("+" + strings.Repeat("-", m.width*2) + "+\n")
+	b.WriteString("└" + strings.Repeat("─", m.width*2) + "┘\n")
 
 	// Help text
 	if m.state == StatePaused {
 		b.WriteString("\n")
-		b.WriteString(pauseStyle.Render("PAUSED - Press P to continue"))
+		b.WriteString(pauseStyle.Render("⏸  PAUSED - Press P to continue"))
 		b.WriteString("\n")
 	} else {
 		b.WriteString("\n")
@@ -117,7 +117,7 @@ func (m Model) renderGameOver() string {
 	b.WriteString("\n")
 
 	if m.score == m.highScore && m.score > 0 {
-		newHighScore := highScoreStyle.Render("*** NEW HIGH SCORE! ***")
+		newHighScore := highScoreStyle.Render("🏆 NEW HIGH SCORE! 🏆")
 		b.WriteString(newHighScore)
 		b.WriteString("\n")
 	} else {
