@@ -2,6 +2,7 @@ package menu
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	game2048 "github.com/GGPrompts/TUIClassics/games/2048"
 	"github.com/GGPrompts/TUIClassics/games/balatro"
 	"github.com/GGPrompts/TUIClassics/games/minesweeper"
 	"github.com/GGPrompts/TUIClassics/games/solitaire"
@@ -10,6 +11,12 @@ import (
 // New creates a new menu model with all available games
 func New() Model {
 	games := []GameInfo{
+		{
+			Name:        "2048",
+			Description: "Slide tiles to reach 2048",
+			Hotkey:      "2",
+			NewFunc:     func() tea.Model { return game2048.New() },
+		},
 		{
 			Name:        "Balatro",
 			Description: "Poker roguelike with jokers and scoring combos",
