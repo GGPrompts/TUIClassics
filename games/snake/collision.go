@@ -20,7 +20,12 @@ func (m *Model) checkCollision() bool {
 	return false
 }
 
-// gameOver handles the game over state
+// crash triggers the crash animation state
+func (m *Model) crash() {
+	m.state = StateCrashed
+}
+
+// gameOver transitions from crash to game over screen
 func (m *Model) gameOver() {
 	m.state = StateGameOver
 	if m.score > m.highScore {

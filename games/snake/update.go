@@ -9,10 +9,20 @@ import (
 // TickMsg is sent on each game tick to update the snake's position
 type TickMsg time.Time
 
+// CrashDelayMsg is sent after crash animation delay
+type CrashDelayMsg time.Time
+
 // tickCmd creates a command that sends a tick message after duration d
 func tickCmd(d time.Duration) tea.Cmd {
 	return tea.Tick(d, func(t time.Time) tea.Msg {
 		return TickMsg(t)
+	})
+}
+
+// crashDelayCmd waits 1 second then transitions to game over
+func crashDelayCmd() tea.Cmd {
+	return tea.Tick(1*time.Second, func(t time.Time) tea.Msg {
+		return CrashDelayMsg(t)
 	})
 }
 
@@ -40,7 +50,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.moveSnake()
 
 			if m.checkCollision() {
-				m.gameOver()
+				m.crash()
+				return m, crashDelayCmd() // Show crash animation for 1 second
 			}
 
 			// Speed up gradually as score increases
@@ -54,6 +65,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		return m, tickCmd(m.speed)
+
+	case CrashDelayMsg:
+		// Transition from crash animation to game over screen
+		if m.state == StateCrashed {
+			m.gameOver()
+		}
+		return m, nil
 	}
 
 	return m, nil

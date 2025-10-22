@@ -12,7 +12,7 @@ func (m Model) View() string {
 	switch m.state {
 	case StateMenu:
 		return m.renderMenu()
-	case StatePlaying, StatePaused:
+	case StatePlaying, StatePaused, StateCrashed:
 		return m.renderGame()
 	case StateGameOver:
 		return m.renderGameOver()
@@ -63,8 +63,10 @@ func (m Model) renderGame() string {
 			point := Point{x, y}
 
 			if point == m.snake[0] {
-				// Snake head - show surprise face when eating!
-				if m.justAte {
+				// Snake head - different expressions for different states
+				if m.state == StateCrashed {
+					b.WriteString(headCrashedStyle.Render("😵"))
+				} else if m.justAte {
 					b.WriteString(headEatingStyle.Render("😮"))
 				} else {
 					b.WriteString(headStyle.Render("😊"))

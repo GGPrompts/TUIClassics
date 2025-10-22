@@ -12,8 +12,12 @@ var (
 		Foreground(lipgloss.Color("226")). // Yellow when eating
 		Bold(true)
 
+	headCrashedStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("196")). // Red when crashed
+		Bold(true)
+
 	bodyStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("82")) // Light green
+		Foreground(lipgloss.Color("46")) // Bright green (same as head)
 
 	foodStyle = lipgloss.NewStyle().
 		Bold(true)

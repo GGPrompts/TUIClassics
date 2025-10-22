@@ -25,6 +25,7 @@ const (
 	StateMenu GameState = iota
 	StatePlaying
 	StatePaused
+	StateCrashed  // Brief pause showing crash animation
 	StateGameOver
 )
 
