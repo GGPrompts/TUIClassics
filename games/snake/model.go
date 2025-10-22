@@ -6,9 +6,9 @@ import "time"
 func New() Model {
 	return Model{
 		state:     StateMenu,
-		width:     30,
+		width:     24, // Reduced from 30 for better aspect ratio
 		height:    20,
-		speed:     100 * time.Millisecond,
+		speed:     200 * time.Millisecond, // Slower starting speed
 		highScore: 0,
 	}
 }

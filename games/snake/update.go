@@ -43,10 +43,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.gameOver()
 			}
 
-			// Speed up as score increases (max speed: 30ms)
-			newSpeed := 100*time.Millisecond - time.Duration(m.score)*2*time.Millisecond
-			if newSpeed < 30*time.Millisecond {
-				newSpeed = 30 * time.Millisecond
+			// Speed up gradually as score increases
+			// Start: 200ms (5 moves/sec)
+			// Max speed: 80ms (12.5 moves/sec) at score 30+
+			newSpeed := 200*time.Millisecond - time.Duration(m.score)*4*time.Millisecond
+			if newSpeed < 80*time.Millisecond {
+				newSpeed = 80 * time.Millisecond
 			}
 			m.speed = newSpeed
 		}
