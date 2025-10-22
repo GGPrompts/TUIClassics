@@ -18,7 +18,8 @@ func New() Model {
 func (m *Model) getDifficultySettings() (initialSpeed, minSpeed time.Duration, speedDecrease int) {
 	switch m.difficulty {
 	case Easy:
-		return 250 * time.Millisecond, 120 * time.Millisecond, 3
+		// Responsive start, slower max speed, gentle progression
+		return 180 * time.Millisecond, 100 * time.Millisecond, 2
 	case Medium:
 		return 200 * time.Millisecond, 80 * time.Millisecond, 4
 	case Hard:

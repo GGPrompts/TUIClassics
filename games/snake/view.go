@@ -63,7 +63,7 @@ func (m Model) renderDifficultySelect() string {
 		name        string
 		description string
 	}{
-		{Easy, "🟢 EASY", "Relaxed pace - 250ms start, 120ms max"},
+		{Easy, "🟢 EASY", "Gentle pace - 180ms start, 100ms max"},
 		{Medium, "🟡 MEDIUM", "Balanced challenge - 200ms start, 80ms max"},
 		{Hard, "🔴 HARD", "Fast & intense - 150ms start, 50ms max"},
 	}

@@ -1,7 +1,8 @@
 package snake
 
 // moveSnake updates the snake's position based on current direction
-func (m *Model) moveSnake() {
+// Returns true if the move was successful, false if it would cause a collision
+func (m *Model) moveSnake() bool {
 	// Reset eating animation flag
 	m.justAte = false
 
@@ -25,6 +26,11 @@ func (m *Model) moveSnake() {
 		newHead = Point{head.X + 1, head.Y}
 	}
 
+	// Check for collision BEFORE moving
+	if m.wouldCollide(newHead) {
+		return false // Don't move, signal collision
+	}
+
 	// Add new head to front of snake
 	m.snake = append([]Point{newHead}, m.snake...)
 
@@ -38,6 +44,8 @@ func (m *Model) moveSnake() {
 		// Remove tail (snake moves forward without growing)
 		m.snake = m.snake[:len(m.snake)-1]
 	}
+
+	return true // Move successful
 }
 
 // isOpposite checks if two directions are opposite to each other

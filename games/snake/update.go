@@ -47,9 +47,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case TickMsg:
 		if m.state == StatePlaying {
-			m.moveSnake()
-
-			if m.checkCollision() {
+			// Try to move - if it would collide, crash without moving
+			if !m.moveSnake() {
 				m.crash()
 				return m, crashDelayCmd() // Show crash animation for 1 second
 			}
