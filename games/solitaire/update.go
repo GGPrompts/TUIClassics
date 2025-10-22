@@ -41,7 +41,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// Global keys
 	switch msg.String() {
-	case "q", "ctrl+c":
+	case "q", "ctrl+c", "f10":
 		return m, tea.Quit
 
 	case "n", "N":
@@ -194,43 +194,68 @@ func (m *Model) moveCursorRight() {
 	}
 }
 
-// moveCursorUp moves the cursor up within a tableau stack
+// moveCursorUp moves the cursor up within a tableau stack or to the top row
 func (m *Model) moveCursorUp() {
-	// Only works on tableau piles
-	if m.cursor.PileType != TableauPile {
-		return
-	}
-
-	pile := m.tableau[m.cursor.PileIndex]
-	if len(pile.Cards) == 0 {
-		return
-	}
-
-	// Move up to previous card (earlier in the stack)
-	if m.cursorCardIndex > 0 {
-		// Check if the previous card is face up
-		if pile.Cards[m.cursorCardIndex-1].FaceUp {
-			m.cursorCardIndex--
+	switch m.cursor.PileType {
+	case TableauPile:
+		pile := m.tableau[m.cursor.PileIndex]
+		if len(pile.Cards) == 0 {
+			// Empty pile - jump to top row at this column
+			m.jumpToTopRow()
+			return
 		}
+
+		// Try to move up within the stack
+		if m.cursorCardIndex > 0 {
+			// Check if the previous card is face up
+			if pile.Cards[m.cursorCardIndex-1].FaceUp {
+				m.cursorCardIndex--
+				return
+			}
+		}
+
+		// Already at top of tableau stack - jump to top row
+		m.jumpToTopRow()
+
+	case FoundationPile, WastePile, StockPile:
+		// Already at top row, do nothing
+		return
 	}
 }
 
-// moveCursorDown moves the cursor down within a tableau stack
+// moveCursorDown moves the cursor down within a tableau stack or to tableau from top row
 func (m *Model) moveCursorDown() {
-	// Only works on tableau piles
-	if m.cursor.PileType != TableauPile {
-		return
-	}
+	switch m.cursor.PileType {
+	case TableauPile:
+		pile := m.tableau[m.cursor.PileIndex]
+		if len(pile.Cards) == 0 {
+			// Empty pile, nowhere to move down
+			return
+		}
 
-	pile := m.tableau[m.cursor.PileIndex]
-	if len(pile.Cards) == 0 {
-		return
-	}
+		// Move down to next card (later in the stack)
+		maxIndex := len(pile.Cards) - 1
+		if m.cursorCardIndex < maxIndex {
+			m.cursorCardIndex++
+		}
 
-	// Move down to next card (later in the stack)
-	maxIndex := len(pile.Cards) - 1
-	if m.cursorCardIndex < maxIndex {
-		m.cursorCardIndex++
+	case StockPile:
+		// Stock → Tableau 0 (leftmost)
+		m.cursor.PileType = TableauPile
+		m.cursor.PileIndex = 0
+		m.resetCursorCardIndex()
+
+	case WastePile:
+		// Waste → Tableau 1 (second from left)
+		m.cursor.PileType = TableauPile
+		m.cursor.PileIndex = 1
+		m.resetCursorCardIndex()
+
+	case FoundationPile:
+		// Foundations 0-3 → Tableaus 2-5
+		m.cursor.PileType = TableauPile
+		m.cursor.PileIndex = m.cursor.PileIndex + 2
+		m.resetCursorCardIndex()
 	}
 }
 
@@ -243,6 +268,35 @@ func (m *Model) resetCursorCardIndex() {
 		} else {
 			m.cursorCardIndex = 0
 		}
+	}
+}
+
+// jumpToTopRow moves cursor from tableau to the corresponding position in the top row
+func (m *Model) jumpToTopRow() {
+	if m.cursor.PileType != TableauPile {
+		return
+	}
+
+	// Map tableau columns to top row positions
+	// Top row layout: [Stock] [Waste] [gap] [F0] [F1] [F2] [F3]
+	// Tableau layout: [T0]    [T1]    [T2]  [T3] [T4] [T5] [T6]
+	switch m.cursor.PileIndex {
+	case 0:
+		// Leftmost tableau → Stock
+		m.cursor.PileType = StockPile
+		m.cursor.PileIndex = 0
+	case 1:
+		// Second tableau → Waste
+		m.cursor.PileType = WastePile
+		m.cursor.PileIndex = 0
+	case 2, 3, 4, 5:
+		// Middle tableaus → Foundations 0-3
+		m.cursor.PileType = FoundationPile
+		m.cursor.PileIndex = m.cursor.PileIndex - 2
+	case 6:
+		// Rightmost tableau → Foundation 3 (last foundation)
+		m.cursor.PileType = FoundationPile
+		m.cursor.PileIndex = 3
 	}
 }
 

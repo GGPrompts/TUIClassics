@@ -14,7 +14,7 @@ func main() {
 	p := tea.NewProgram(
 		m,
 		tea.WithAltScreen(),
-		tea.WithMouseCellMotion(),
+		tea.WithMouseCellMotion(), // Enable mouse support (clicks during motion)
 	)
 
 	if _, err := p.Run(); err != nil {

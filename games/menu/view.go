@@ -19,6 +19,12 @@ func (m Model) View() string {
 }
 
 func (m Model) renderMainMenu() string {
+	// Use the Windows 95-style landing page
+	if m.landingPage != nil {
+		return m.landingPage.Render()
+	}
+
+	// Fallback to simple menu if landing page not initialized
 	var b strings.Builder
 
 	// Title

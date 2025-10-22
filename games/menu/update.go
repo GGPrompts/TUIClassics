@@ -16,10 +16,24 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
 
+	case tea.MouseMsg:
+		return m.handleMouseEvent(msg)
+
 	case tea.WindowSizeMsg:
 		m.termWidth = msg.Width
 		m.termHeight = msg.Height
+		// Resize landing page
+		if m.landingPage != nil {
+			m.landingPage.Resize(msg.Width, msg.Height)
+		}
 		return m, nil
+
+	case AnimationTickMsg:
+		// Update landing page animation
+		if m.landingPage != nil {
+			m.landingPage.Update()
+		}
+		return m, animationTick() // Continue animation loop
 	}
 
 	return m, nil

@@ -2,6 +2,7 @@ package menu
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/GGPrompts/TUIClassics/games/balatro"
 	"github.com/GGPrompts/TUIClassics/games/minesweeper"
 	"github.com/GGPrompts/TUIClassics/games/solitaire"
 )
@@ -9,6 +10,12 @@ import (
 // New creates a new menu model with all available games
 func New() Model {
 	games := []GameInfo{
+		{
+			Name:        "Balatro",
+			Description: "Poker roguelike with jokers and scoring combos",
+			Hotkey:      "b",
+			NewFunc:     func() tea.Model { return balatro.New() },
+		},
 		{
 			Name:        "Minesweeper",
 			Description: "Classic mine-finding puzzle game",
@@ -27,12 +34,16 @@ func New() Model {
 		state:       StateMainMenu,
 		games:       games,
 		selectedIdx: 0,
+		landingPage: NewLandingPage(80, 24), // Default size, will be updated on WindowSizeMsg
 	}
 }
 
 // Init initializes the menu
 func (m Model) Init() tea.Cmd {
-	return nil
+	return tea.Batch(
+		tea.WindowSize(),  // Request terminal size immediately
+		animationTick(),   // Start animation loop
+	)
 }
 
 // launchGame starts the selected game
