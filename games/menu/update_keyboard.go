@@ -41,16 +41,13 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// Launch selected game or handle Exit
 		if m.landingPage != nil {
 			selection := m.landingPage.GetSelectedItem()
-			switch selection {
-			case "Minesweeper 💣":
-				cmd := m.launchGame(0)
-				return m, cmd
-			case "Solitaire 🂡":
-				cmd := m.launchGame(1)
-				return m, cmd
-			case "Exit 🚪":
+			// Check if Exit button selected
+			if selection == "Exit 🚪" {
 				return m, tea.Quit
 			}
+			// Otherwise, launch the game at selectedBtn index
+			cmd := m.launchGame(m.landingPage.selectedBtn)
+			return m, cmd
 		} else {
 			cmd := m.launchGame(m.selectedIdx)
 			return m, cmd

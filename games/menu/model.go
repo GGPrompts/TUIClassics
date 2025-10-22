@@ -13,7 +13,7 @@ import (
 func New() Model {
 	games := []GameInfo{
 		{
-			Name:        "Balatro",
+			Name:        "Balatro 🚧",
 			Description: "Poker roguelike with jokers and scoring combos",
 			Hotkey:      "b",
 			NewFunc:     func() tea.Model { return balatro.New() },
@@ -44,12 +44,13 @@ func New() Model {
 		},
 	}
 
-	return Model{
+	m := Model{
 		state:       StateMainMenu,
 		games:       games,
 		selectedIdx: 0,
-		landingPage: NewLandingPage(80, 24), // Default size, will be updated on WindowSizeMsg
 	}
+	m.landingPage = NewLandingPage(80, 24, games) // Default size, will be updated on WindowSizeMsg
+	return m
 }
 
 // Init initializes the menu

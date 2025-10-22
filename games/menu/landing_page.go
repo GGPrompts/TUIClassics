@@ -349,29 +349,34 @@ func Button3D(label string, selected bool) string {
 
 // LandingPage composites all elements for the TFE landing screen
 type LandingPage struct {
-	starfield   *Starfield
-	background  *CheckeredBackground
-	width       int
-	height      int
-	frame       int
-	selectedBtn int
-	menuItems   []string
+	starfield    *Starfield
+	background   *CheckeredBackground
+	width        int
+	height       int
+	frame        int
+	selectedBtn  int
+	menuItems    []string
 	useStarfield bool // Toggle between starfield and checkered background
+	scrollOffset int  // Vertical scroll offset for large game lists
 }
 
-// NewLandingPage creates the landing page
-func NewLandingPage(width, height int) *LandingPage {
+// NewLandingPage creates the landing page with dynamic games list
+func NewLandingPage(width, height int, games []GameInfo) *LandingPage {
+	// Build menu items from games
+	menuItems := make([]string, len(games)+1) // +1 for Exit
+	for i, game := range games {
+		menuItems[i] = game.Name
+	}
+	menuItems[len(games)] = "Exit 🚪"
+
 	return &LandingPage{
-		starfield:   NewStarfield(width, height),
-		background:  NewCheckeredBackground(width, height),
-		width:       width,
-		height:      height,
-		menuItems: []string{
-			"Minesweeper 💣",
-			"Solitaire 🂡",
-			"Exit 🚪",
-		},
+		starfield:    NewStarfield(width, height),
+		background:   NewCheckeredBackground(width, height),
+		width:        width,
+		height:       height,
+		menuItems:    menuItems,
 		selectedBtn:  0,
+		scrollOffset: 0,
 		useStarfield: true, // Start with starfield
 	}
 }
@@ -399,17 +404,50 @@ func (lp *LandingPage) ToggleBackground() {
 	lp.useStarfield = !lp.useStarfield
 }
 
-// SelectNext moves to next menu item
+// SelectNext moves to next menu item and adjusts scroll if needed
 func (lp *LandingPage) SelectNext() {
 	lp.selectedBtn = (lp.selectedBtn + 1) % len(lp.menuItems)
+	lp.ensureVisible()
 }
 
-// SelectPrev moves to previous menu item
+// SelectPrev moves to previous menu item and adjusts scroll if needed
 func (lp *LandingPage) SelectPrev() {
 	lp.selectedBtn--
 	if lp.selectedBtn < 0 {
 		lp.selectedBtn = len(lp.menuItems) - 1
 	}
+	lp.ensureVisible()
+}
+
+// ensureVisible adjusts scroll offset to keep selected item visible
+func (lp *LandingPage) ensureVisible() {
+	maxVisible := lp.getMaxVisibleItems()
+
+	// Scroll down if selected is below visible area
+	if lp.selectedBtn >= lp.scrollOffset+maxVisible {
+		lp.scrollOffset = lp.selectedBtn - maxVisible + 1
+	}
+
+	// Scroll up if selected is above visible area
+	if lp.selectedBtn < lp.scrollOffset {
+		lp.scrollOffset = lp.selectedBtn
+	}
+}
+
+// getMaxVisibleItems calculates how many menu items can fit on screen
+func (lp *LandingPage) getMaxVisibleItems() int {
+	logoHeight := 8
+	windowChrome := 6 // Title bar + borders + padding
+	footerHeight := 2
+
+	availableHeight := lp.height - logoHeight - windowChrome - footerHeight - 3 // 3 for spacing
+	itemHeight := 4 // Each button is 3 lines + 1 blank line
+
+	maxItems := availableHeight / itemHeight
+	if maxItems < 1 {
+		maxItems = 1
+	}
+	return maxItems
 }
 
 // GetSelectedItem returns current selection
@@ -417,7 +455,7 @@ func (lp *LandingPage) GetSelectedItem() string {
 	return lp.menuItems[lp.selectedBtn]
 }
 
-// GetButtonBounds calculates the Y position and height of each button
+// GetButtonBounds calculates the Y position and height of each visible button
 // Returns a map of button index to (startY, endY)
 func (lp *LandingPage) GetButtonBounds() map[int][2]int {
 	bounds := make(map[int][2]int)
@@ -425,8 +463,22 @@ func (lp *LandingPage) GetButtonBounds() map[int][2]int {
 	// Calculate logo height
 	logoHeight := 8 // CLASSICS logo is 8 lines
 
+	// Calculate visible items
+	maxVisible := lp.getMaxVisibleItems()
+	endIdx := lp.scrollOffset + maxVisible
+	if endIdx > len(lp.menuItems) {
+		endIdx = len(lp.menuItems)
+	}
+	visibleCount := endIdx - lp.scrollOffset
+
 	// Calculate window starting position
-	windowHeight := len(lp.menuItems)*4 + 6 // Each button is ~4 lines tall + window chrome
+	windowHeight := visibleCount*4 + 6 // Each button is ~4 lines tall + window chrome
+	if lp.scrollOffset > 0 {
+		windowHeight += 2 // "More above" indicator
+	}
+	if endIdx < len(lp.menuItems) {
+		windowHeight += 2 // "More below" indicator
+	}
 	totalHeight := logoHeight + 3 + windowHeight
 
 	logoY := (lp.height - totalHeight) / 2
@@ -441,7 +493,13 @@ func (lp *LandingPage) GetButtonBounds() map[int][2]int {
 	// Each button is 3 lines tall (border + content + border) + 1 blank line
 	currentY := contentStartY + 1 // +1 for initial newline in content
 
-	for i := range lp.menuItems {
+	// Add space for "More above" indicator if scrolled
+	if lp.scrollOffset > 0 {
+		currentY += 2
+	}
+
+	// Only calculate bounds for visible items
+	for i := lp.scrollOffset; i < endIdx; i++ {
 		// Button height: 3 lines (rounded border makes it 3 lines)
 		bounds[i] = [2]int{currentY, currentY + 3}
 		currentY += 4 // 3 lines for button + 1 blank line
@@ -514,17 +572,36 @@ func (lp *LandingPage) Render() string {
 			Render(line)
 	}
 
-	// Layer 3: Menu window (without icons - they'll be overlaid later)
+	// Layer 3: Menu window (with scrolling support)
+	maxVisible := lp.getMaxVisibleItems()
+	endIdx := lp.scrollOffset + maxVisible
+	if endIdx > len(lp.menuItems) {
+		endIdx = len(lp.menuItems)
+	}
+
 	var menuContent strings.Builder
 	menuContent.WriteString("\n")
-	for i, item := range lp.menuItems {
+
+	// Show scroll indicator at top if needed
+	if lp.scrollOffset > 0 {
+		scrollHint := lipgloss.NewStyle().
+			Foreground(win95Colors.ButtonText).
+			Faint(true).
+			Render("▲ More above")
+		padding := (34 - lipgloss.Width(scrollHint)) / 2
+		menuContent.WriteString(strings.Repeat(" ", padding) + scrollHint + "\n\n")
+	}
+
+	// Render visible menu items
+	for i := lp.scrollOffset; i < endIdx; i++ {
+		item := lp.menuItems[i]
 		btn := Button3D(item, i == lp.selectedBtn)
 		// Center each button within the window width
 		btnLines := strings.Split(btn, "\n")
 		for _, btnLine := range btnLines {
 			// Calculate visual width properly
 			visualWidth := lipgloss.Width(btnLine)
-			padding := (34 - visualWidth) / 2  // Window content is ~34 chars wide
+			padding := (34 - visualWidth) / 2 // Window content is ~34 chars wide
 			if padding < 0 {
 				padding = 0
 			}
@@ -533,12 +610,32 @@ func (lp *LandingPage) Render() string {
 		menuContent.WriteString("\n")
 	}
 
-	window := NewWindows95Window("Game Launcher", menuContent.String(), 40, len(lp.menuItems)*4+6)
+	// Show scroll indicator at bottom if needed
+	if endIdx < len(lp.menuItems) {
+		scrollHint := lipgloss.NewStyle().
+			Foreground(win95Colors.ButtonText).
+			Faint(true).
+			Render("▼ More below")
+		padding := (34 - lipgloss.Width(scrollHint)) / 2
+		menuContent.WriteString(strings.Repeat(" ", padding) + scrollHint + "\n")
+	}
+
+	// Calculate window height based on visible items
+	visibleCount := endIdx - lp.scrollOffset
+	windowHeight := visibleCount*4 + 6 // Each button is 4 lines + window chrome
+	if lp.scrollOffset > 0 {
+		windowHeight += 2 // Add space for "More above" indicator
+	}
+	if endIdx < len(lp.menuItems) {
+		windowHeight += 2 // Add space for "More below" indicator
+	}
+
+	window := NewWindows95Window("Game Launcher", menuContent.String(), 40, windowHeight)
 	windowLines := strings.Split(window, "\n")
 
 	// Calculate positions
 	logoHeight := len(logoStyled)
-	windowHeight := len(windowLines)
+	windowHeight = len(windowLines) // Reassign, already declared above
 	totalHeight := logoHeight + 3 + windowHeight
 
 	logoY := (lp.height - totalHeight) / 2
