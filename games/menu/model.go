@@ -4,6 +4,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/GGPrompts/TUIClassics/games/balatro"
 	"github.com/GGPrompts/TUIClassics/games/minesweeper"
+	"github.com/GGPrompts/TUIClassics/games/snake"
 	"github.com/GGPrompts/TUIClassics/games/solitaire"
 )
 
@@ -21,6 +22,12 @@ func New() Model {
 			Description: "Classic mine-finding puzzle game",
 			Hotkey:      "m",
 			NewFunc:     func() tea.Model { return minesweeper.New() },
+		},
+		{
+			Name:        "Snake",
+			Description: "Classic snake game - eat, grow, survive!",
+			Hotkey:      "n",
+			NewFunc:     func() tea.Model { return snake.New() },
 		},
 		{
 			Name:        "Solitaire",
