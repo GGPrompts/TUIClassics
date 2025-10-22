@@ -2,6 +2,9 @@ package snake
 
 // moveSnake updates the snake's position based on current direction
 func (m *Model) moveSnake() {
+	// Reset eating animation flag
+	m.justAte = false
+
 	// Update direction (prevent 180-degree turns)
 	if !m.isOpposite(m.direction, m.nextDir) {
 		m.direction = m.nextDir
@@ -28,6 +31,7 @@ func (m *Model) moveSnake() {
 	// Check if snake ate food
 	if newHead == m.food {
 		m.score++
+		m.justAte = true // Show eating animation
 		m.spawnFood()
 		// Snake grows (don't remove tail)
 	} else {

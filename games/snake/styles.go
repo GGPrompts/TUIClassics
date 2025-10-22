@@ -8,11 +8,14 @@ var (
 		Foreground(lipgloss.Color("46")). // Bright green
 		Bold(true)
 
+	headEatingStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("226")). // Yellow when eating
+		Bold(true)
+
 	bodyStyle = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("82")) // Light green
 
 	foodStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("196")). // Red
 		Bold(true)
 )
 

@@ -63,14 +63,18 @@ func (m Model) renderGame() string {
 			point := Point{x, y}
 
 			if point == m.snake[0] {
-				// Snake head
-				b.WriteString(headStyle.Render("●●"))
+				// Snake head - show surprise face when eating!
+				if m.justAte {
+					b.WriteString(headEatingStyle.Render("😮"))
+				} else {
+					b.WriteString(headStyle.Render("😊"))
+				}
 			} else if m.isSnakeBody(point) {
-				// Snake body
-				b.WriteString(bodyStyle.Render("●●"))
+				// Snake body - clean circles
+				b.WriteString(bodyStyle.Render("⚫"))
 			} else if point == m.food {
-				// Food
-				b.WriteString(foodStyle.Render("◆◆"))
+				// Food - apple emoji
+				b.WriteString(foodStyle.Render("🍎"))
 			} else {
 				// Empty space
 				b.WriteString("  ")

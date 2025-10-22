@@ -37,6 +37,7 @@ type Model struct {
 	food      Point
 	score     int
 	highScore int
+	justAte   bool // True for one tick after eating food
 
 	// Game board dimensions
 	width  int
