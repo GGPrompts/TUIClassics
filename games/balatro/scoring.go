@@ -26,7 +26,8 @@ type ScoreCalculation struct {
 
 // CalculateScore calculates the score for a played hand
 // This is the core scoring engine - chips × mult
-func CalculateScore(handInfo HandInfo, playedCards []Card) ScoreCalculation {
+// Calculation order: base → card chips → card mults → jokers → final
+func CalculateScore(handInfo HandInfo, playedCards []Card, jokers []Joker) ScoreCalculation {
 	calc := ScoreCalculation{
 		BaseChips:     handInfo.BaseChips,
 		BaseMult:      handInfo.BaseMult,
@@ -111,6 +112,11 @@ func CalculateScore(handInfo HandInfo, playedCards []Card) ScoreCalculation {
 	// Apply mult multiplier
 	if multMultiplier != 1.0 {
 		calc.TotalMult = int(float64(calc.TotalMult) * multMultiplier)
+	}
+
+	// Phase 3: Apply joker effects IN ORDER (order matters!)
+	for i := range jokers {
+		jokers[i].Apply(&calc, handInfo, playedCards)
 	}
 
 	// Final score = Chips × Mult

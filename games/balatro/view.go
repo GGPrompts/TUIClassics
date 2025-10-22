@@ -268,6 +268,12 @@ func (m Model) renderGameView() string {
 	sections = append(sections, centeredGameInfo)
 	sections = append(sections, "")
 
+	// Jokers display (if any)
+	if len(m.jokers) > 0 {
+		sections = append(sections, m.renderJokers())
+		sections = append(sections, "")
+	}
+
 	// Hand display
 	sections = append(sections, m.renderHand())
 	sections = append(sections, "")
@@ -385,6 +391,115 @@ func (m Model) renderGameInfo() string {
 		Bold(true)
 
 	return style.Render(info)
+}
+
+// renderJokers renders owned jokers in a compact horizontal display
+func (m Model) renderJokers() string {
+	if len(m.jokers) == 0 {
+		return ""
+	}
+
+	var jokerCards []string
+	for _, joker := range m.jokers {
+		jokerCards = append(jokerCards, m.renderJokerCard(joker))
+	}
+
+	// Join jokers horizontally with spacing
+	jokersRow := lipgloss.JoinHorizontal(lipgloss.Top, jokerCards...)
+
+	// Label
+	label := lipgloss.NewStyle().
+		Foreground(neonColors.Purple).
+		Bold(true).
+		Render("JOKERS")
+
+	return lipgloss.JoinVertical(lipgloss.Center, label, jokersRow)
+}
+
+// renderJokerCard renders a single joker card (compact)
+func (m Model) renderJokerCard(joker Joker) string {
+	// Card border style based on rarity
+	cardStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(joker.Rarity.Color()).
+		Width(18).
+		Height(4).
+		Padding(0, 1).
+		MarginRight(1)
+
+	// Content
+	var content strings.Builder
+
+	// Name (colored by rarity)
+	nameStyle := lipgloss.NewStyle().
+		Foreground(joker.Rarity.Color()).
+		Bold(true)
+	content.WriteString(nameStyle.Render(joker.Name))
+	content.WriteString("\n")
+
+	// Description (wrap if needed)
+	desc := joker.Description
+	if len(desc) > 18 {
+		// Truncate with ellipsis
+		desc = desc[:15] + "..."
+	}
+	descStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("250"))
+	content.WriteString(descStyle.Render(desc))
+
+	return cardStyle.Render(content.String())
+}
+
+// renderShopJoker renders a joker for sale in the shop
+func (m Model) renderShopJoker(joker Joker, selected bool, index int) string {
+	// Card border style
+	borderColor := joker.Rarity.Color()
+	if selected {
+		borderColor = neonColors.Gold // Highlight selected
+	}
+
+	cardStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(borderColor).
+		Width(22).
+		Height(6).
+		Padding(0, 1).
+		MarginRight(2)
+
+	// Content
+	var content strings.Builder
+
+	// Number for selection
+	numStyle := lipgloss.NewStyle().
+		Foreground(neonColors.Cyan).
+		Bold(true)
+	content.WriteString(numStyle.Render(fmt.Sprintf("[%d]", index+1)))
+	content.WriteString("\n")
+
+	// Name (colored by rarity)
+	nameStyle := lipgloss.NewStyle().
+		Foreground(joker.Rarity.Color()).
+		Bold(true)
+	content.WriteString(nameStyle.Render(joker.Name))
+	content.WriteString("\n")
+
+	// Description
+	desc := joker.Description
+	if len(desc) > 22 {
+		desc = desc[:19] + "..."
+	}
+	descStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("250"))
+	content.WriteString(descStyle.Render(desc))
+	content.WriteString("\n")
+
+	// Cost
+	costStyle := lipgloss.NewStyle().
+		Foreground(neonColors.Gold).
+		Bold(true)
+	content.WriteString(costStyle.Render(fmt.Sprintf("$%d", joker.GetCost())))
+
+	return cardStyle.Render(content.String())
 }
 
 // renderHand renders all cards in the hand (centered)
@@ -777,16 +892,46 @@ func (m Model) renderShopScreen() string {
 	sections = append(sections, nextBlindText)
 	sections = append(sections, "")
 
-	// Shop items (Phase 2: placeholder)
-	shopInfo := "Shop coming soon!"
-	shopInfoStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("250")).
-		Italic(true)
-	sections = append(sections, shopInfoStyle.Render(shopInfo))
-	sections = append(sections, "")
+	// Shop items - Jokers for sale
+	if len(m.shopJokers) > 0 {
+		jokersLabel := lipgloss.NewStyle().
+			Foreground(neonColors.Purple).
+			Bold(true).
+			Render("JOKERS FOR SALE")
+		sections = append(sections, jokersLabel)
+		sections = append(sections, "")
+
+		// Render each shop joker
+		var shopJokerCards []string
+		for i, joker := range m.shopJokers {
+			selected := (i == m.selectedShopItem)
+			shopJokerCards = append(shopJokerCards, m.renderShopJoker(joker, selected, i))
+		}
+		jokersRow := lipgloss.JoinHorizontal(lipgloss.Top, shopJokerCards...)
+		sections = append(sections, jokersRow)
+		sections = append(sections, "")
+	}
+
+	// Current jokers owned
+	if len(m.jokers) > 0 {
+		ownedLabel := lipgloss.NewStyle().
+			Foreground(neonColors.Gold).
+			Bold(true).
+			Render(fmt.Sprintf("YOUR JOKERS (%d/5)", len(m.jokers)))
+		sections = append(sections, ownedLabel)
+		sections = append(sections, "")
+
+		var ownedJokerCards []string
+		for _, joker := range m.jokers {
+			ownedJokerCards = append(ownedJokerCards, m.renderJokerCard(joker))
+		}
+		ownedRow := lipgloss.JoinHorizontal(lipgloss.Top, ownedJokerCards...)
+		sections = append(sections, ownedRow)
+		sections = append(sections, "")
+	}
 
 	// Controls
-	controls := "Press Enter to continue to next blind | Q: Quit"
+	controls := "1-2: Select | Enter: Buy | Space: Continue | Q: Quit"
 	controlsStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("250")).
 		Italic(true)

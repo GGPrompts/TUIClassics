@@ -174,6 +174,17 @@ func (m Model) handleBlindCompleteKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// Continue to shop
 		m.gamePhase = PhaseShop
 		m.statusMsg = "Welcome to the shop!"
+
+		// Generate shop jokers (2 random jokers for sale)
+		m.shopJokers = make([]Joker, 0, 2)
+		if joker1 := GetRandomJoker(Common); joker1 != nil {
+			m.shopJokers = append(m.shopJokers, *joker1)
+		}
+		if joker2 := GetRandomJoker(Uncommon); joker2 != nil {
+			m.shopJokers = append(m.shopJokers, *joker2)
+		}
+		m.selectedShopItem = 0 // Select first joker
+
 		return m, nil
 
 	case "q":
@@ -189,7 +200,50 @@ func (m Model) handleBlindCompleteKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 // handleShopKeys handles shop screen
 func (m Model) handleShopKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
+	case "1", "2":
+		// Select shop item
+		index := 0
+		if msg.String() == "2" {
+			index = 1
+		}
+		if index < len(m.shopJokers) {
+			m.selectedShopItem = index
+		}
+		return m, nil
+
 	case "enter":
+		// Buy selected joker
+		if m.selectedShopItem >= 0 && m.selectedShopItem < len(m.shopJokers) {
+			joker := m.shopJokers[m.selectedShopItem]
+
+			// Check if player can afford it
+			if m.roundState.Money >= joker.GetCost() {
+				// Check if player has room for more jokers
+				if len(m.jokers) < 5 {
+					// Buy the joker
+					m.jokers = append(m.jokers, joker)
+					m.roundState.Money -= joker.GetCost()
+					m.money = m.roundState.Money // Sync legacy field
+
+					// Remove from shop
+					m.shopJokers = append(m.shopJokers[:m.selectedShopItem], m.shopJokers[m.selectedShopItem+1:]...)
+
+					// Update selection
+					if m.selectedShopItem >= len(m.shopJokers) && len(m.shopJokers) > 0 {
+						m.selectedShopItem = len(m.shopJokers) - 1
+					}
+
+					m.statusMsg = fmt.Sprintf("Bought %s for $%d!", joker.Name, joker.GetCost())
+				} else {
+					m.statusMsg = "Joker slots full! (max 5)"
+				}
+			} else {
+				m.statusMsg = fmt.Sprintf("Not enough money! Need $%d", joker.GetCost())
+			}
+		}
+		return m, nil
+
+	case " ": // Space to continue
 		// Advance to next blind
 		m.roundState.AdvanceBlind()
 

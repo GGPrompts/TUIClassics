@@ -53,6 +53,11 @@ type Model struct {
 	currentHandInfo   HandInfo         // Info about the currently selected hand
 	lastScore         ScoreCalculation // Last score calculation
 
+	// Phase 3: Jokers & Effects
+	jokers        []Joker // Player's joker cards (max 5)
+	shopJokers    []Joker // Jokers available for purchase in shop (2 per visit)
+	selectedShopItem int  // Selected shop item index (-1 = none)
+
 	// Phase 2: Round progression
 	gamePhase    GamePhase   // Current game phase (playing, victory, shop, game over)
 	roundState   RoundState  // Round state (ante, blind, scores, hands/discards)
