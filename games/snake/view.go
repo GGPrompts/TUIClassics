@@ -72,8 +72,8 @@ func (m Model) renderGame() string {
 					b.WriteString(headStyle.Render("😊"))
 				}
 			} else if m.isSnakeBody(point) {
-				// Snake body - clean circles
-				b.WriteString(bodyStyle.Render("⚫"))
+				// Snake body - bright green circles
+				b.WriteString(bodyStyle.Render("●●"))
 			} else if point == m.food {
 				// Food - apple emoji
 				b.WriteString(foodStyle.Render("🍎"))
