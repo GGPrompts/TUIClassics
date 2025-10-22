@@ -14,6 +14,18 @@ import (
 func New() Model {
 	games := []GameInfo{
 		{
+			Name:        "Minesweeper",
+			Description: "Classic mine-finding puzzle game",
+			Hotkey:      "m",
+			NewFunc:     func() tea.Model { return minesweeper.New() },
+		},
+		{
+			Name:        "Solitaire",
+			Description: "Klondike card game",
+			Hotkey:      "s",
+			NewFunc:     func() tea.Model { return solitaire.New() },
+		},
+		{
 			Name:        "2048",
 			Description: "Slide tiles to reach 2048",
 			Hotkey:      "2",
@@ -32,22 +44,10 @@ func New() Model {
 			NewFunc:     func() tea.Model { return hero.New() },
 		},
 		{
-			Name:        "Minesweeper",
-			Description: "Classic mine-finding puzzle game",
-			Hotkey:      "m",
-			NewFunc:     func() tea.Model { return minesweeper.New() },
-		},
-		{
 			Name:        "Snake",
 			Description: "Classic snake game - eat, grow, survive!",
 			Hotkey:      "n",
 			NewFunc:     func() tea.Model { return snake.New() },
-		},
-		{
-			Name:        "Solitaire",
-			Description: "Klondike card game",
-			Hotkey:      "s",
-			NewFunc:     func() tea.Model { return solitaire.New() },
 		},
 	}
 
