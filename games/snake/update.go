@@ -28,10 +28,7 @@ func crashDelayCmd() tea.Cmd {
 
 // Init initializes the game and requests terminal size
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(
-		tea.WindowSize(),
-		tickCmd(m.speed),
-	)
+	return tea.WindowSize()
 }
 
 // Update handles all incoming messages and updates the game state
