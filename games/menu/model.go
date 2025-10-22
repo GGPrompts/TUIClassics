@@ -3,6 +3,7 @@ package menu
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/GGPrompts/TUIClassics/games/balatro"
+	"github.com/GGPrompts/TUIClassics/games/hero"
 	"github.com/GGPrompts/TUIClassics/games/minesweeper"
 	"github.com/GGPrompts/TUIClassics/games/snake"
 	"github.com/GGPrompts/TUIClassics/games/solitaire"
@@ -16,6 +17,12 @@ func New() Model {
 			Description: "Poker roguelike with jokers and scoring combos",
 			Hotkey:      "b",
 			NewFunc:     func() tea.Model { return balatro.New() },
+		},
+		{
+			Name:        "Keyboard Hero",
+			Description: "Rhythm game - hit keys to the beat!",
+			Hotkey:      "h",
+			NewFunc:     func() tea.Model { return hero.New() },
 		},
 		{
 			Name:        "Minesweeper",
