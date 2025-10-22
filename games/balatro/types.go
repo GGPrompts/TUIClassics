@@ -69,6 +69,10 @@ type Model struct {
 	discardsRemaining int              // Discards left this round
 	targetScore       int              // Score needed to beat the round
 	currentScore      int              // Score accumulated this round
+
+	// Mouse state tracking
+	mousePressX int // X position where mouse was pressed
+	mousePressY int // Y position where mouse was pressed
 }
 
 // Config holds application configuration
