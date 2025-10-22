@@ -1,6 +1,6 @@
-.PHONY: all minesweeper solitaire classics install clean test run-minesweeper run-solitaire run-classics
+.PHONY: all minesweeper solitaire 2048 classics install clean test run-minesweeper run-solitaire run-2048 run-classics
 
-all: minesweeper solitaire classics
+all: minesweeper solitaire 2048 classics
 
 minesweeper:
 	@echo "Building minesweeper..."
@@ -9,6 +9,10 @@ minesweeper:
 solitaire:
 	@echo "Building solitaire..."
 	@go build -o bin/solitaire ./cmd/solitaire
+
+2048:
+	@echo "Building 2048..."
+	@go build -o bin/2048 ./cmd/2048
 
 classics:
 	@echo "Building classics launcher..."
@@ -31,6 +35,9 @@ run-minesweeper:
 
 run-solitaire:
 	@go run ./cmd/solitaire
+
+run-2048:
+	@go run ./cmd/2048
 
 run-classics:
 	@go run ./cmd/classics
