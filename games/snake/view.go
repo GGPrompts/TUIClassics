@@ -12,6 +12,8 @@ func (m Model) View() string {
 	switch m.state {
 	case StateMenu:
 		return m.renderMenu()
+	case StateDifficultySelect:
+		return m.renderDifficultySelect()
 	case StatePlaying, StatePaused, StateCrashed:
 		return m.renderGame()
 	case StateGameOver:
@@ -43,6 +45,46 @@ func (m Model) renderMenu() string {
 		b.WriteString(menuStyle.Render(line))
 		b.WriteString("\n")
 	}
+
+	return lipgloss.Place(m.termWidth, m.termHeight,
+		lipgloss.Center, lipgloss.Center, b.String())
+}
+
+// renderDifficultySelect displays the difficulty selection screen
+func (m Model) renderDifficultySelect() string {
+	var b strings.Builder
+
+	title := titleStyle.Render("SELECT DIFFICULTY")
+	b.WriteString(title)
+	b.WriteString("\n\n\n")
+
+	difficulties := []struct {
+		diff        Difficulty
+		name        string
+		description string
+	}{
+		{Easy, "🟢 EASY", "Relaxed pace - 250ms start, 120ms max"},
+		{Medium, "🟡 MEDIUM", "Balanced challenge - 200ms start, 80ms max"},
+		{Hard, "🔴 HARD", "Fast & intense - 150ms start, 50ms max"},
+	}
+
+	for _, d := range difficulties {
+		if d.diff == m.selectedDifficulty {
+			// Selected option
+			b.WriteString(selectedDifficultyStyle.Render("► " + d.name))
+			b.WriteString("\n")
+			b.WriteString(selectedDifficultyDescStyle.Render("  " + d.description))
+		} else {
+			// Unselected option
+			b.WriteString(difficultyStyle.Render("  " + d.name))
+			b.WriteString("\n")
+			b.WriteString(difficultyDescStyle.Render("  " + d.description))
+		}
+		b.WriteString("\n\n")
+	}
+
+	b.WriteString("\n")
+	b.WriteString(helpStyle.Render("↑↓ to select | ENTER to play | ESC for menu"))
 
 	return lipgloss.Place(m.termWidth, m.termHeight,
 		lipgloss.Center, lipgloss.Center, b.String())

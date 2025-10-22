@@ -14,8 +14,24 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case StateMenu:
 		switch msg.String() {
 		case "enter":
+			m.state = StateDifficultySelect
+		}
+
+	case StateDifficultySelect:
+		switch msg.String() {
+		case "up", "k", "w":
+			if m.selectedDifficulty > Easy {
+				m.selectedDifficulty--
+			}
+		case "down", "j", "s":
+			if m.selectedDifficulty < Hard {
+				m.selectedDifficulty++
+			}
+		case "enter":
 			m.startGame()
 			return m, tickCmd(m.speed)
+		case "esc":
+			m.state = StateMenu
 		}
 
 	case StatePlaying:

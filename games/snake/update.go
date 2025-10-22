@@ -54,12 +54,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, crashDelayCmd() // Show crash animation for 1 second
 			}
 
-			// Speed up gradually as score increases
-			// Start: 200ms (5 moves/sec)
-			// Max speed: 80ms (12.5 moves/sec) at score 30+
-			newSpeed := 200*time.Millisecond - time.Duration(m.score)*4*time.Millisecond
-			if newSpeed < 80*time.Millisecond {
-				newSpeed = 80 * time.Millisecond
+			// Speed up gradually as score increases based on difficulty
+			initialSpeed, minSpeed, speedDecrease := m.getDifficultySettings()
+			newSpeed := initialSpeed - time.Duration(m.score)*time.Duration(speedDecrease)*time.Millisecond
+			if newSpeed < minSpeed {
+				newSpeed = minSpeed
 			}
 			m.speed = newSpeed
 		}

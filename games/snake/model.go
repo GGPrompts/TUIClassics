@@ -5,16 +5,38 @@ import "time"
 // New creates a new Snake game model
 func New() Model {
 	return Model{
-		state:     StateMenu,
-		width:     24, // Reduced from 30 for better aspect ratio
-		height:    20,
-		speed:     200 * time.Millisecond, // Slower starting speed
-		highScore: 0,
+		state:              StateMenu,
+		difficulty:         Medium,
+		selectedDifficulty: Medium,
+		width:              24, // Reduced from 30 for better aspect ratio
+		height:             20,
+		highScore:          0,
+	}
+}
+
+// getDifficultySettings returns initial speed and speed progression for difficulty
+func (m *Model) getDifficultySettings() (initialSpeed, minSpeed time.Duration, speedDecrease int) {
+	switch m.difficulty {
+	case Easy:
+		return 250 * time.Millisecond, 120 * time.Millisecond, 3
+	case Medium:
+		return 200 * time.Millisecond, 80 * time.Millisecond, 4
+	case Hard:
+		return 150 * time.Millisecond, 50 * time.Millisecond, 5
+	default:
+		return 200 * time.Millisecond, 80 * time.Millisecond, 4
 	}
 }
 
 // startGame initializes a new game
 func (m *Model) startGame() {
+	// Set difficulty from selection
+	m.difficulty = m.selectedDifficulty
+
+	// Set speed based on difficulty
+	initialSpeed, _, _ := m.getDifficultySettings()
+	m.speed = initialSpeed
+
 	// Place snake in the middle of the board
 	centerX := m.width / 2
 	centerY := m.height / 2

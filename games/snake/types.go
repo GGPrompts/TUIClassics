@@ -23,22 +23,34 @@ type GameState int
 
 const (
 	StateMenu GameState = iota
+	StateDifficultySelect
 	StatePlaying
 	StatePaused
 	StateCrashed  // Brief pause showing crash animation
 	StateGameOver
 )
 
+// Difficulty represents game difficulty level
+type Difficulty int
+
+const (
+	Easy Difficulty = iota
+	Medium
+	Hard
+)
+
 // Model holds the game state
 type Model struct {
-	state     GameState
-	snake     []Point   // Head is at index 0
-	direction Direction
-	nextDir   Direction // Buffer for next move to prevent missed inputs
-	food      Point
-	score     int
-	highScore int
-	justAte   bool // True for one tick after eating food
+	state              GameState
+	difficulty         Difficulty
+	selectedDifficulty Difficulty // Cursor position in difficulty select
+	snake              []Point    // Head is at index 0
+	direction          Direction
+	nextDir            Direction // Buffer for next move to prevent missed inputs
+	food               Point
+	score              int
+	highScore          int
+	justAte            bool // True for one tick after eating food
 
 	// Game board dimensions
 	width  int

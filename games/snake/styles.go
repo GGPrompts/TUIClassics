@@ -58,6 +58,20 @@ var (
 	helpStyle = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("240")) // Dark gray
 
+	// Difficulty selection styles
+	difficultyStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("252")) // Light gray
+
+	difficultyDescStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("240")) // Dark gray
+
+	selectedDifficultyStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("46")). // Green
+		Bold(true)
+
+	selectedDifficultyDescStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("82")) // Light green
+
 	// Game border - uses Lipgloss rounded border
 	gameBorderStyle = lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
