@@ -1,6 +1,8 @@
 package minesweeper
 
 import (
+	"time"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -31,12 +33,30 @@ func (m Model) handleMouseEvent(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 	switch msg.Button {
 	case tea.MouseButtonLeft:
 		if msg.Action == tea.MouseActionPress {
-			// Show surprised face when clicking
-			m.smileyState = SmileySurprised
-			m.RevealCell(gridX, gridY)
-			// If explosion animation started, begin animation ticks
-			if m.state == StateExploding {
-				return m, animationTick()
+			// Check for double-click (for touch-screen flag support)
+			now := time.Now()
+			isDoubleClick := gridX == m.lastClickX &&
+				gridY == m.lastClickY &&
+				now.Sub(m.lastClickTime) < 500*time.Millisecond
+
+			if isDoubleClick {
+				// Double-click = toggle flag (right-click alternative)
+				m.ToggleFlag(gridX, gridY)
+				// Reset double-click tracking
+				m.lastClickTime = time.Time{}
+			} else {
+				// Single click = reveal cell
+				// Show surprised face when clicking
+				m.smileyState = SmileySurprised
+				m.RevealCell(gridX, gridY)
+				// Track this click for double-click detection
+				m.lastClickX = gridX
+				m.lastClickY = gridY
+				m.lastClickTime = now
+				// If explosion animation started, begin animation ticks
+				if m.state == StateExploding {
+					return m, animationTick()
+				}
 			}
 		} else if msg.Action == tea.MouseActionRelease {
 			// Return to happy if still playing

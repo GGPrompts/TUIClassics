@@ -12,7 +12,7 @@ func main() {
 	p := tea.NewProgram(
 		solitaire.New(),
 		tea.WithAltScreen(),
-		tea.WithMouseAllMotion(), // Changed from CellMotion to AllMotion (like minesweeper)
+		tea.WithMouseCellMotion(),
 	)
 
 	if _, err := p.Run(); err != nil {

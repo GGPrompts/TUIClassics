@@ -84,6 +84,11 @@ type Model struct {
 	// UI state
 	smileyState SmileyState // Current smiley face state
 
+	// Double-click detection (for touch-screen flag support)
+	lastClickX    int
+	lastClickY    int
+	lastClickTime time.Time
+
 	// High scores
 	bestTime time.Duration
 }
