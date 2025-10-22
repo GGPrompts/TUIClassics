@@ -72,6 +72,10 @@ var (
 	selectedDifficultyDescStyle = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("82")) // Light green
 
+	// Separator line below score
+	separatorStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("46")) // Green (matches border)
+
 	// Game border - uses Lipgloss rounded border
 	gameBorderStyle = lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).

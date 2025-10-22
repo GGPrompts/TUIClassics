@@ -99,6 +99,11 @@ func (m Model) renderGame() string {
 	b.WriteString(scoreHeaderStyle.Render(scoreLine))
 	b.WriteString("\n")
 
+	// Separator line below score
+	separator := strings.Repeat("─", m.width*2)
+	b.WriteString(separatorStyle.Render(separator))
+	b.WriteString("\n")
+
 	// Game board
 	for y := 0; y < m.height; y++ {
 		for x := 0; x < m.width; x++ {
