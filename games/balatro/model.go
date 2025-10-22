@@ -99,6 +99,13 @@ func (m *Model) newGame() {
 	m.lastScore = ScoreCalculation{}
 	m.currentHandInfo = HandInfo{}
 
+	// Phase 3: Initialize with starting joker for testing
+	m.jokers = make([]Joker, 0, 5) // Max 5 jokers
+	// Give player basic "Joker" (+4 Mult) to test the system
+	if basicJoker := GetJokerByID("joker_basic"); basicJoker != nil {
+		m.jokers = append(m.jokers, *basicJoker)
+	}
+
 	// Phase 2: Initialize roundState with Ante 1, Small Blind
 	m.roundState = NewRound(1)
 	m.gamePhase = PhaseSelectCards
@@ -181,9 +188,9 @@ func (m *Model) playHand() {
 		cardsToScore, _ = FindBestPlay(m.hand)
 	}
 
-	// Evaluate and score
+	// Evaluate and score (with joker effects)
 	handInfo := EvaluateHand(cardsToScore)
-	m.lastScore = CalculateScore(handInfo, cardsToScore)
+	m.lastScore = CalculateScore(handInfo, cardsToScore, m.jokers)
 
 	// Remove played cards from hand
 	m.hand = removeCards(m.hand, cardsToScore)
