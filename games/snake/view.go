@@ -52,20 +52,13 @@ func (m Model) renderMenu() string {
 func (m Model) renderGame() string {
 	var b strings.Builder
 
-	// Top border with score
-	scoreLine := fmt.Sprintf("  Score: %d    High: %d", m.score, m.highScore)
-	padding := m.width*2 - len(scoreLine) + 2
-	if padding < 0 {
-		padding = 0
-	}
-
-	b.WriteString("┌" + strings.Repeat("─", m.width*2) + "┐\n")
-	b.WriteString("│" + scoreLine + strings.Repeat(" ", padding) + "│\n")
-	b.WriteString("├" + strings.Repeat("─", m.width*2) + "┤\n")
+	// Score header
+	scoreLine := fmt.Sprintf("Score: %d    High: %d", m.score, m.highScore)
+	b.WriteString(scoreHeaderStyle.Render(scoreLine))
+	b.WriteString("\n")
 
 	// Game board
 	for y := 0; y < m.height; y++ {
-		b.WriteString("│")
 		for x := 0; x < m.width; x++ {
 			point := Point{x, y}
 
@@ -83,25 +76,24 @@ func (m Model) renderGame() string {
 				b.WriteString("  ")
 			}
 		}
-		b.WriteString("│\n")
+		b.WriteString("\n")
 	}
 
-	// Bottom border
-	b.WriteString("└" + strings.Repeat("─", m.width*2) + "┘\n")
+	// Wrap in border
+	bordered := gameBorderStyle.Render(b.String())
 
 	// Help text
+	var help string
 	if m.state == StatePaused {
-		b.WriteString("\n")
-		b.WriteString(pauseStyle.Render("⏸  PAUSED - Press P to continue"))
-		b.WriteString("\n")
+		help = pauseStyle.Render("⏸  PAUSED - Press P to continue")
 	} else {
-		b.WriteString("\n")
-		b.WriteString(helpStyle.Render("Press arrow keys to move | P to pause | Q to quit"))
-		b.WriteString("\n")
+		help = helpStyle.Render("Press arrow keys to move | P to pause | Q to quit")
 	}
 
+	content := lipgloss.JoinVertical(lipgloss.Center, bordered, "", help)
+
 	return lipgloss.Place(m.termWidth, m.termHeight,
-		lipgloss.Center, lipgloss.Center, b.String())
+		lipgloss.Center, lipgloss.Center, content)
 }
 
 // renderGameOver displays the game over screen

@@ -30,6 +30,11 @@ var (
 		Foreground(lipgloss.Color("226")). // Yellow
 		Bold(true)
 
+	scoreHeaderStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("226")). // Yellow
+		Bold(true).
+		Align(lipgloss.Center)
+
 	highScoreStyle = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("220")). // Gold
 		Bold(true)
@@ -45,4 +50,10 @@ var (
 
 	helpStyle = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("240")) // Dark gray
+
+	// Game border - uses Lipgloss rounded border
+	gameBorderStyle = lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("46")). // Green border
+		Padding(0, 1)
 )
