@@ -21,6 +21,9 @@ var (
 
 	foodStyle = lipgloss.NewStyle().
 		Bold(true)
+
+	wallStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("240")) // Dark gray walls
 )
 
 // UI styles
@@ -76,9 +79,8 @@ var (
 	separatorStyle = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("46")) // Green (matches border)
 
-	// Game border - uses Lipgloss rounded border
+	// Game border - uses Lipgloss rounded border (no padding - walls handle spacing)
 	gameBorderStyle = lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("46")). // Green border
-		Padding(0, 1)
+		BorderForeground(lipgloss.Color("46")) // Green border
 )

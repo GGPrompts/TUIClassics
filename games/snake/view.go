@@ -97,19 +97,19 @@ func (m Model) renderGame() string {
 	// Score header
 	scoreLine := fmt.Sprintf("Score: %d    High: %d", m.score, m.highScore)
 	b.WriteString(scoreHeaderStyle.Render(scoreLine))
-	b.WriteString("\n")
+	b.WriteString("\n\n")
 
-	// Separator line below score
-	separator := strings.Repeat("─", m.width*2)
-	b.WriteString(separatorStyle.Render(separator))
-	b.WriteString("\n")
-
-	// Game board
-	for y := 0; y < m.height; y++ {
-		for x := 0; x < m.width; x++ {
+	// Game board with visible walls
+	for y := -1; y <= m.height; y++ {
+		for x := -1; x <= m.width; x++ {
 			point := Point{x, y}
 
-			if point == m.snake[0] {
+			// Draw walls around the edges
+			isWall := x == -1 || x == m.width || y == -1 || y == m.height
+
+			if isWall {
+				b.WriteString(wallStyle.Render("▓▓"))
+			} else if point == m.snake[0] {
 				// Snake head - different expressions for different states
 				if m.state == StateCrashed {
 					b.WriteString(headCrashedStyle.Render("😵"))
