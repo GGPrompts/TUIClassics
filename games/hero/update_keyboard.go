@@ -28,6 +28,23 @@ func (m Model) handleMenuInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.songIndex >= 0 && m.songIndex < len(songs) {
 			m.startSong(&songs[m.songIndex])
 		}
+
+	// Number hotkeys for direct selection
+	case "1":
+		songs := getDemoSongs()
+		if len(songs) >= 1 {
+			m.startSong(&songs[0])
+		}
+	case "2":
+		songs := getDemoSongs()
+		if len(songs) >= 2 {
+			m.startSong(&songs[1])
+		}
+	case "3":
+		songs := getDemoSongs()
+		if len(songs) >= 3 {
+			m.startSong(&songs[2])
+		}
 	}
 
 	return m, nil

@@ -43,7 +43,7 @@ func (m Model) renderMenu() string {
 	}
 
 	b.WriteString("\n")
-	b.WriteString(helpStyle.Render("Up/Down: Select  Enter: Play  q: Quit"))
+	b.WriteString(helpStyle.Render("1-3: Select Song  Up/Down: Navigate  Enter: Play  q: Quit"))
 
 	return lipgloss.Place(m.termWidth, m.termHeight,
 		lipgloss.Center, lipgloss.Center, b.String())
