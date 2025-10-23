@@ -8,6 +8,25 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "q", "ctrl+c":
 		return m, tea.Quit
+
+	case "s", "S":
+		// Toggle stats view (from menu or game over state)
+		if m.state == StateMenu || m.state == StateGameOver {
+			m.previousState = m.state
+			m.state = StateStats
+			return m, nil
+		} else if m.state == StateStats {
+			// Return from stats view
+			m.state = m.previousState
+			return m, nil
+		}
+
+	case "esc":
+		// ESC returns from stats view
+		if m.state == StateStats {
+			m.state = m.previousState
+			return m, nil
+		}
 	}
 
 	switch m.state {

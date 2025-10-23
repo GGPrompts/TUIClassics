@@ -48,6 +48,25 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// Start new game
 		m.NewGame()
 		return m, nil
+
+	case "s", "S":
+		// Toggle stats view (from menu or won state)
+		if m.state == StateMenu || m.state == StateWon {
+			m.previousState = m.state
+			m.state = StateStats
+			return m, nil
+		} else if m.state == StateStats {
+			// Return from stats view
+			m.state = m.previousState
+			return m, nil
+		}
+
+	case "esc":
+		// ESC returns from stats view
+		if m.state == StateStats {
+			m.state = m.previousState
+			return m, nil
+		}
 	}
 
 	// State-specific keys
@@ -323,6 +342,7 @@ func (m Model) handleSelect() (tea.Model, tea.Cmd) {
 		if m.CheckWin() {
 			m.state = StateWon
 			m.elapsedTime = time.Since(m.startTime)
+			m.recordStats() // Record stats and achievements
 			m.StartWaterfallAnimation()
 			return m, animationTick()
 		}
@@ -452,6 +472,7 @@ func (m Model) handleQuickFoundationMove(key string) (tea.Model, tea.Cmd) {
 		if m.CheckWin() {
 			m.state = StateWon
 			m.elapsedTime = time.Since(m.startTime)
+			m.recordStats() // Record stats and achievements
 			m.StartWaterfallAnimation()
 			return m, animationTick()
 		}

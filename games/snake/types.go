@@ -28,6 +28,7 @@ const (
 	StatePaused
 	StateCrashed  // Brief pause showing crash animation
 	StateGameOver
+	StateStats
 )
 
 // Difficulty represents game difficulty level
@@ -42,6 +43,7 @@ const (
 // Model holds the game state
 type Model struct {
 	state              GameState
+	previousState      GameState  // For returning from stats view
 	difficulty         Difficulty
 	selectedDifficulty Difficulty // Cursor position in difficulty select
 	snake              []Point    // Head is at index 0
@@ -51,6 +53,9 @@ type Model struct {
 	score              int
 	highScore          int
 	justAte            bool // True for one tick after eating food
+
+	// Stats/Achievements
+	achievements []string // Latest achievements to display
 
 	// Game board dimensions
 	width  int

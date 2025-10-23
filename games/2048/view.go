@@ -20,6 +20,8 @@ func renderView(m Model) string {
 		return m.renderGameOver()
 	case StateInstructions:
 		return m.renderInstructions()
+	case StateStats:
+		return m.renderStats()
 	}
 	return ""
 }
@@ -53,6 +55,8 @@ func (m Model) renderMenu() string {
 	b.WriteString(lipgloss.NewStyle().Width(m.termWidth).Align(lipgloss.Center).Render(helpStyle.Render("Press ENTER to start")))
 	b.WriteString("\n")
 	b.WriteString(lipgloss.NewStyle().Width(m.termWidth).Align(lipgloss.Center).Render(helpStyle.Render("I or ? for instructions")))
+	b.WriteString("\n")
+	b.WriteString(lipgloss.NewStyle().Width(m.termWidth).Align(lipgloss.Center).Render(helpStyle.Render("S for stats")))
 	b.WriteString("\n")
 	b.WriteString(lipgloss.NewStyle().Width(m.termWidth).Align(lipgloss.Center).Render(helpStyle.Render("Q to quit")))
 
@@ -209,8 +213,18 @@ func (m Model) renderWin() string {
 	}
 	b.WriteString("\n")
 
+	// Show achievements if any
+	if len(m.achievements) > 0 {
+		achievementStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#98C379")).Bold(true)
+		for _, ach := range m.achievements {
+			b.WriteString(lipgloss.NewStyle().Width(m.termWidth).Align(lipgloss.Center).Render(achievementStyle.Render(ach)))
+			b.WriteString("\n")
+		}
+		b.WriteString("\n")
+	}
+
 	// Help text (centered)
-	winHelpText := "C to continue | I/? for help | R to restart | Q to quit"
+	winHelpText := "C to continue | I/? for help | S for stats | R to restart | Q to quit"
 	b.WriteString(lipgloss.NewStyle().Width(m.termWidth).Align(lipgloss.Center).Render(helpStyle.Render(winHelpText)))
 
 	return b.String()
@@ -265,7 +279,7 @@ func (m Model) renderGameOver() string {
 	b.WriteString("\n")
 
 	// Help text (centered)
-	gameOverHelpText := "I/? for help | R to restart | Q to quit"
+	gameOverHelpText := "I/? for help | S for stats | R to restart | Q to quit"
 	b.WriteString(lipgloss.NewStyle().Width(m.termWidth).Align(lipgloss.Center).Render(helpStyle.Render(gameOverHelpText)))
 
 	return b.String()

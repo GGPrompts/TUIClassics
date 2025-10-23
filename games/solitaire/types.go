@@ -66,6 +66,7 @@ const (
 	StatePlaying
 	StateWon
 	StateLost
+	StateStats
 )
 
 // CursorLocation tracks which pile the cursor is on
@@ -81,12 +82,16 @@ type Model struct {
 	termHeight int
 
 	// Game state
-	state       GameState
-	drawMode    int // 1 or 3
-	score       int
-	moves       int
-	startTime   time.Time
-	elapsedTime time.Duration
+	state         GameState
+	previousState GameState // For returning from stats view
+	drawMode      int       // 1 or 3
+	score         int
+	moves         int
+	startTime     time.Time
+	elapsedTime   time.Duration
+
+	// Stats/Achievements
+	achievements []string // Latest achievements to display
 
 	// Piles
 	tableau    [7]Pile

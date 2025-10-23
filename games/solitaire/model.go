@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/GGPrompts/TUIClassics/internal/stats"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -238,5 +239,31 @@ func (m *Model) AddScore(points int) {
 	m.score += points
 	if m.score < 0 {
 		m.score = 0
+	}
+}
+
+// recordStats records the game result in the stats database
+func (m *Model) recordStats() {
+	// Load current stats
+	scores, err := stats.Load()
+	if err != nil {
+		return // Silently fail if stats can't be loaded
+	}
+
+	// Calculate time in seconds
+	timeSeconds := int(m.elapsedTime.Seconds())
+
+	// Update stats and get achievements
+	achievements := stats.UpdateSolitaireScore(scores, m.score, timeSeconds, m.moves)
+
+	// Save updated stats
+	if err := stats.Save(scores); err != nil {
+		return // Silently fail if save fails
+	}
+
+	// Store achievements for display
+	m.achievements = make([]string, len(achievements))
+	for i, ach := range achievements {
+		m.achievements[i] = string(ach)
 	}
 }

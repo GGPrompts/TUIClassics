@@ -24,6 +24,7 @@ func (m *Model) move(dir Direction) bool {
 		if !m.wonOnce && m.hasValue(2048) {
 			m.state = StateWon
 			m.wonOnce = true
+			m.recordStats() // Record achievement
 		}
 
 		// Check game over

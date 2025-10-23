@@ -50,4 +50,5 @@ func (m *Model) gameOver() {
 	if m.score > m.highScore {
 		m.highScore = m.score
 	}
+	m.recordStats() // Record stats and achievements
 }

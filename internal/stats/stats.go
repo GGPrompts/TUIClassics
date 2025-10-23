@@ -213,3 +213,133 @@ func Update2048Score(scores *ScoreData, score int) []Achievement {
 
 	return achievements
 }
+
+// UpdateSolitaireScore updates a solitaire score and returns achievements
+func UpdateSolitaireScore(scores *ScoreData, score, timeSeconds, moves int) []Achievement {
+	now := time.Now()
+	month, week := GetCurrentPeriod()
+	achievements := []Achievement{}
+
+	// Check all-time best (highest score)
+	if score > scores.Solitaire.AllTime.Score {
+		scores.Solitaire.AllTime = SolitaireScore{
+			Score:       score,
+			TimeSeconds: timeSeconds,
+			Moves:       moves,
+			Date:        now,
+		}
+		achievements = append(achievements, AchievementAllTime)
+	}
+
+	// Check monthly best
+	if ShouldResetPeriod(scores.Solitaire.Monthly.Period, "month") {
+		scores.Solitaire.Monthly = SolitaireScore{
+			Score:       score,
+			TimeSeconds: timeSeconds,
+			Moves:       moves,
+			Date:        now,
+			Period:      month,
+		}
+		if len(achievements) == 0 {
+			achievements = append(achievements, AchievementMonthly)
+		}
+	} else if score > scores.Solitaire.Monthly.Score {
+		scores.Solitaire.Monthly = SolitaireScore{
+			Score:       score,
+			TimeSeconds: timeSeconds,
+			Moves:       moves,
+			Date:        now,
+			Period:      month,
+		}
+		if len(achievements) == 0 {
+			achievements = append(achievements, AchievementMonthly)
+		}
+	}
+
+	// Check weekly best
+	if ShouldResetPeriod(scores.Solitaire.Weekly.Period, "week") {
+		scores.Solitaire.Weekly = SolitaireScore{
+			Score:       score,
+			TimeSeconds: timeSeconds,
+			Moves:       moves,
+			Date:        now,
+			Period:      week,
+		}
+		if len(achievements) == 0 {
+			achievements = append(achievements, AchievementWeekly)
+		}
+	} else if score > scores.Solitaire.Weekly.Score {
+		scores.Solitaire.Weekly = SolitaireScore{
+			Score:       score,
+			TimeSeconds: timeSeconds,
+			Moves:       moves,
+			Date:        now,
+			Period:      week,
+		}
+		if len(achievements) == 0 {
+			achievements = append(achievements, AchievementWeekly)
+		}
+	}
+
+	return achievements
+}
+
+// UpdateSnakeScore updates a snake score and returns achievements
+func UpdateSnakeScore(scores *ScoreData, score int) []Achievement {
+	now := time.Now()
+	month, week := GetCurrentPeriod()
+	achievements := []Achievement{}
+
+	// Check all-time best
+	if score > scores.Snake.AllTime.Score {
+		scores.Snake.AllTime = PointsScore{
+			Score: score,
+			Date:  now,
+		}
+		achievements = append(achievements, AchievementAllTime)
+	}
+
+	// Check monthly best
+	if ShouldResetPeriod(scores.Snake.Monthly.Period, "month") {
+		scores.Snake.Monthly = PointsScore{
+			Score:  score,
+			Date:   now,
+			Period: month,
+		}
+		if len(achievements) == 0 {
+			achievements = append(achievements, AchievementMonthly)
+		}
+	} else if score > scores.Snake.Monthly.Score {
+		scores.Snake.Monthly = PointsScore{
+			Score:  score,
+			Date:   now,
+			Period: month,
+		}
+		if len(achievements) == 0 {
+			achievements = append(achievements, AchievementMonthly)
+		}
+	}
+
+	// Check weekly best
+	if ShouldResetPeriod(scores.Snake.Weekly.Period, "week") {
+		scores.Snake.Weekly = PointsScore{
+			Score:  score,
+			Date:   now,
+			Period: week,
+		}
+		if len(achievements) == 0 {
+			achievements = append(achievements, AchievementWeekly)
+		}
+	} else if score > scores.Snake.Weekly.Score {
+		scores.Snake.Weekly = PointsScore{
+			Score:  score,
+			Date:   now,
+			Period: week,
+		}
+		if len(achievements) == 0 {
+			achievements = append(achievements, AchievementWeekly)
+		}
+	}
+
+	return achievements
+}

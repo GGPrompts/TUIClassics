@@ -18,6 +18,8 @@ func (m Model) View() string {
 		return m.renderGame()
 	case StateGameOver:
 		return m.renderGameOver()
+	case StateStats:
+		return m.renderStats()
 	}
 	return ""
 }
@@ -171,10 +173,18 @@ func (m Model) renderGameOver() string {
 		b.WriteString("\n")
 	}
 
+	// Show achievements if any
+	if len(m.achievements) > 0 {
+		b.WriteString("\n")
+		achievementStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#98C379")).Bold(true)
+		for _, ach := range m.achievements {
+			b.WriteString(achievementStyle.Render(ach))
+			b.WriteString("\n")
+		}
+	}
+
 	b.WriteString("\n")
-	b.WriteString("Press R to restart\n")
-	b.WriteString("Press M for menu\n")
-	b.WriteString("Press Q to quit\n")
+	b.WriteString("Press [S] for Stats | [R] to Restart | [M] for Menu | [Q] to Quit\n")
 
 	return lipgloss.Place(m.termWidth, m.termHeight,
 		lipgloss.Center, lipgloss.Center, b.String())

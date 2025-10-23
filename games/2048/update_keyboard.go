@@ -4,10 +4,17 @@ import tea "github.com/charmbracelet/bubbletea"
 
 // handleKeyPress processes keyboard input based on game state
 func handleKeyPress(m Model, msg tea.KeyMsg) (Model, tea.Cmd) {
-	// Global instructions hotkey (works from any state except already in instructions)
-	if (msg.String() == "i" || msg.String() == "?") && m.state != StateInstructions {
+	// Global instructions hotkey (works from any state except already in instructions/stats)
+	if (msg.String() == "i" || msg.String() == "?") && m.state != StateInstructions && m.state != StateStats {
 		m.previousState = m.state
 		m.state = StateInstructions
+		return m, nil
+	}
+
+	// Global stats hotkey (works from menu, won, gameover)
+	if msg.String() == "s" && (m.state == StateMenu || m.state == StateWon || m.state == StateGameOver) {
+		m.previousState = m.state
+		m.state = StateStats
 		return m, nil
 	}
 
@@ -48,6 +55,12 @@ func handleKeyPress(m Model, msg tea.KeyMsg) (Model, tea.Cmd) {
 	case StateInstructions:
 		// Any key returns from instructions
 		if msg.String() == "escape" || msg.String() == "i" || msg.String() == "?" || msg.String() == "enter" || msg.String() == " " {
+			m.state = m.previousState
+		}
+
+	case StateStats:
+		// ESC or S returns from stats
+		if msg.String() == "escape" || msg.String() == "s" {
 			m.state = m.previousState
 		}
 	}

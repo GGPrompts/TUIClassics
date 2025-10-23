@@ -22,6 +22,8 @@ func (m Model) View() string {
 		return m.viewGame()
 	case StateWon:
 		return m.viewWin()
+	case StateStats:
+		return m.renderStats()
 	default:
 		return m.viewGame()
 	}
@@ -513,18 +515,24 @@ func (m Model) viewWin() string {
 		elapsed = time.Since(m.startTime)
 	}
 
-	content := fmt.Sprintf(
-		"♠ ♥ YOU WON! ♦ ♣\n\n"+
-			"Score: %d\n"+
-			"Moves: %d\n"+
-			"Time: %s\n\n"+
-			"Press [N] for New Game or [Q] to Quit",
-		m.score,
-		m.moves,
-		formatDuration(elapsed),
-	)
+	var content strings.Builder
+	content.WriteString("♠ ♥ YOU WON! ♦ ♣\n\n")
+	content.WriteString(fmt.Sprintf("Score: %d\n", m.score))
+	content.WriteString(fmt.Sprintf("Moves: %d\n", m.moves))
+	content.WriteString(fmt.Sprintf("Time: %s\n\n", formatDuration(elapsed)))
 
-	win := winStyle.Render(content)
+	// Show achievements if any
+	if len(m.achievements) > 0 {
+		achievementStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#98C379")).Bold(true)
+		for _, ach := range m.achievements {
+			content.WriteString(achievementStyle.Render(ach) + "\n")
+		}
+		content.WriteString("\n")
+	}
+
+	content.WriteString("Press [S] for Stats | [N] for New Game | [Q] to Quit")
+
+	win := winStyle.Render(content.String())
 
 	return lipgloss.Place(
 		m.termWidth,

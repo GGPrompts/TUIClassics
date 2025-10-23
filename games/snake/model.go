@@ -1,6 +1,10 @@
 package snake
 
-import "time"
+import (
+	"time"
+
+	"github.com/GGPrompts/TUIClassics/internal/stats"
+)
 
 // New creates a new Snake game model
 func New() Model {
@@ -54,4 +58,27 @@ func (m *Model) startGame() {
 	m.score = 0
 	m.spawnFood()
 	m.state = StatePlaying
+}
+
+// recordStats records the game result in the stats database
+func (m *Model) recordStats() {
+	// Load current stats
+	scores, err := stats.Load()
+	if err != nil {
+		return // Silently fail if stats can't be loaded
+	}
+
+	// Update stats and get achievements
+	achievements := stats.UpdateSnakeScore(scores, m.score)
+
+	// Save updated stats
+	if err := stats.Save(scores); err != nil {
+		return // Silently fail if save fails
+	}
+
+	// Store achievements for display
+	m.achievements = make([]string, len(achievements))
+	for i, ach := range achievements {
+		m.achievements[i] = string(ach)
+	}
 }

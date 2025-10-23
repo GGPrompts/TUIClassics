@@ -21,6 +21,7 @@ const (
 	StateWon
 	StateGameOver
 	StateInstructions
+	StateStats
 )
 
 // Tile represents a single tile on the grid
@@ -32,7 +33,7 @@ type Tile struct {
 // Model holds the game state
 type Model struct {
 	state         GameState
-	previousState GameState // For returning from instructions
+	previousState GameState // For returning from instructions/stats
 	grid          [4][4]Tile
 	score         int
 	bestScore     int
@@ -41,6 +42,9 @@ type Model struct {
 	// Terminal dimensions
 	termWidth  int
 	termHeight int
+
+	// Stats/Achievements
+	achievements []string // Latest achievements to display
 }
 
 // Bubbletea interface methods
