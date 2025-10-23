@@ -70,6 +70,7 @@ type Model struct {
 	termHeight int
 	cursorX    int // For keyboard navigation
 	cursorY    int
+	mouseMode  bool // True when using mouse (hides cursor), false when using keyboard
 
 	// Grid rendering boundaries (calculated during View())
 	gridStartX int

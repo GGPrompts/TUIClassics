@@ -251,7 +251,7 @@ func (m Model) renderGrid() string {
 	for y := 0; y < m.height; y++ {
 		for x := 0; x < m.width; x++ {
 			cell := m.grid[y][x]
-			isCursor := (x == m.cursorX && y == m.cursorY)
+			isCursor := (x == m.cursorX && y == m.cursorY) && !m.mouseMode
 
 			cellStr := m.renderCell(cell, isCursor)
 			b.WriteString(cellStr)

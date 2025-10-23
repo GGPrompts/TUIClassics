@@ -30,6 +30,9 @@ func (m Model) handleMouseEvent(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	// Enable mouse mode on first grid click (hides cursor)
+	m.mouseMode = true
+
 	switch msg.Button {
 	case tea.MouseButtonLeft:
 		if msg.Action == tea.MouseActionPress {

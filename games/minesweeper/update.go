@@ -92,21 +92,25 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "up", "k":
 		if m.state == StatePlaying && m.cursorY > 0 {
 			m.cursorY--
+			m.mouseMode = false // Re-enable cursor when using keyboard
 		}
 
 	case "down", "j":
 		if m.state == StatePlaying && m.cursorY < m.height-1 {
 			m.cursorY++
+			m.mouseMode = false // Re-enable cursor when using keyboard
 		}
 
 	case "left", "h":
 		if m.state == StatePlaying && m.cursorX > 0 {
 			m.cursorX--
+			m.mouseMode = false // Re-enable cursor when using keyboard
 		}
 
 	case "right", "l":
 		if m.state == StatePlaying && m.cursorX < m.width-1 {
 			m.cursorX++
+			m.mouseMode = false // Re-enable cursor when using keyboard
 		}
 
 	case "enter", " ":
