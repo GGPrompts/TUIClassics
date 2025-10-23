@@ -51,6 +51,7 @@ func (m *Model) checkHit(lane int) HitResult {
 
 	// Show visual feedback
 	m.lastHit = result
+	m.lastHitLane = lane
 	m.showHitFeedback = true
 	m.hitFeedbackTime = time.Now()
 

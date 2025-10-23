@@ -1,39 +1,72 @@
-# Snake - Implementation Plan
+# Snake - Implementation Summary
 
 **Type**: Classic Movement Game
-**Complexity**: Simple (~400 LOC)
+**Complexity**: Medium (~550 LOC)
 **Time Estimate**: 3-4 hours
-**Status**: Ready to implement
+**Status**: ✅ COMPLETED
 
 ---
 
 ## 🐍 Game Overview
 
-Classic Snake game where you control a growing snake, eat food, and avoid hitting walls or yourself.
+Classic Snake game with personality! Control a growing emoji snake, eat apples, and avoid hitting walls or yourself.
 
 ### Core Mechanics:
-- Snake moves in one direction continuously
-- Arrow keys change direction
-- Eating food makes snake grow
-- Game over if you hit wall or yourself
-- Score increases with each food eaten
+- Snake moves continuously with tick-based animation
+- Arrow keys (or WASD/HJKL) change direction
+- Eating apples (🍎) makes snake grow
+- Game over if you hit walls or yourself
+- Score increases with each apple eaten
+- Progressive speed increase based on difficulty
 
-### Visual Layout:
+### Visual Layout (Actual Implementation):
 ```
-┌────────────────────────────────┐
-│  Score: 15    High: 42         │
-├────────────────────────────────┤
-│                                │
-│      ●●●                       │
-│        ●                       │
-│        ●●                      │
-│                                │
-│              ◆                 │  ← Food
-│                                │
-│                                │
-└────────────────────────────────┘
-Press ↑↓←→ to move | Q to quit
+╭──────────────────────────────────────────────╮
+│         Score: 15    High: 42                │
+│                                              │
+│ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ │  ← Visible walls
+│ ▓▓                                        ▓▓ │
+│ ▓▓      😊●●●●                            ▓▓ │  ← Emoji head!
+│ ▓▓        ●                               ▓▓ │
+│ ▓▓        ●●                              ▓▓ │
+│ ▓▓                                        ▓▓ │
+│ ▓▓              🍎                        ▓▓ │  ← Apple food
+│ ▓▓                                        ▓▓ │
+│ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ │
+╰──────────────────────────────────────────────╯
+
+Press arrow keys to move | P to pause | Q to quit
 ```
+
+---
+
+## 🎨 Key Features Implemented
+
+### ✨ Emoji Snake with Expressions
+- **😊 Happy Face** - Normal state (bright green)
+- **😮 Surprise Face** - When eating (yellow flash)
+- **😵 Dizzy Face** - Crash animation (red, 1-second pause)
+
+### 🎯 Difficulty Selection
+Three balanced difficulty levels with different speed curves:
+
+| Difficulty | Start Speed | Max Speed | Progression | Scores to Max |
+|-----------|-------------|-----------|-------------|---------------|
+| 🟢 Easy    | 180ms (5.6/s) | 100ms (10/s) | -2ms/score | 40 |
+| 🟡 Medium  | 200ms (5/s)   | 80ms (12.5/s) | -4ms/score | 30 |
+| 🔴 Hard    | 150ms (6.7/s) | 50ms (20/s!) | -5ms/score | 20 |
+
+### 🧱 Visible Walls
+- Dark gray block walls (▓▓) around playable area
+- Prevents "hidden boundary" confusion
+- Crash faces always visible against walls
+- Retro aesthetic
+
+### 🎮 Modern UI/UX
+- Lipgloss `RoundedBorder()` for polished look
+- Difficulty selection screen with emoji indicators
+- Centered layouts with proper aspect ratio (24×20 grid)
+- Crash animation with 1-second pause before game over
 
 ---
 
@@ -41,529 +74,374 @@ Press ↑↓←→ to move | Q to quit
 
 ```
 games/snake/
-├── types.go           - Game state, snake, direction enums
-├── model.go           - Model initialization
-├── update.go          - Main update loop & game tick
-├── update_keyboard.go - Direction control
-├── view.go            - Rendering
-├── styles.go          - Visual styles
-├── snake.go           - Snake logic (movement, growth)
-├── collision.go       - Collision detection
+├── types.go           - Game state, snake, direction, difficulty enums
+├── model.go           - Model initialization, difficulty settings
+├── update.go          - Main update loop, game tick, crash delay
+├── update_keyboard.go - Direction control, difficulty selection
+├── view.go            - Rendering (menu, difficulty, game, game over)
+├── styles.go          - Visual styles (emojis, walls, UI)
+├── snake.go           - Snake logic (movement, growth, pre-collision)
+├── collision.go       - Collision detection (wouldCollide, checkCollision)
 └── food.go            - Food spawning
+```
+
+**Entry Point:**
+```
+cmd/snake/main.go      - Standalone game launcher
 ```
 
 ---
 
-## 🎯 Implementation Phases
+## 🎯 Implementation Details
 
-### Phase 1: Core Data Structures (~100 LOC)
+### Phase 1: Core Data Structures ✅
 
-**Files**: `types.go`, `model.go`
-
-**types.go** - Define structures:
+**types.go** - Extended from plan:
 ```go
-type Direction int
+type Difficulty int
 const (
-    Up Direction = iota
-    Down
-    Left
-    Right
+    Easy Difficulty = iota
+    Medium
+    Hard
 )
-
-type Point struct {
-    X int
-    Y int
-}
 
 type GameState int
 const (
     StateMenu GameState = iota
+    StateDifficultySelect  // NEW!
     StatePlaying
     StatePaused
+    StateCrashed          // NEW! 1-second crash animation
     StateGameOver
 )
 
 type Model struct {
-    state      GameState
-    snake      []Point   // Head is at index 0
-    direction  Direction
-    nextDir    Direction // Buffer for next move
-    food       Point
-    score      int
-    highScore  int
-
-    // Game board
-    width      int
-    height     int
-    speed      time.Duration // Time between moves
-
-    // Terminal
-    termWidth  int
-    termHeight int
+    state              GameState
+    difficulty         Difficulty
+    selectedDifficulty Difficulty // For menu cursor
+    justAte            bool       // NEW! Eating animation flag
+    // ... rest of fields
 }
 ```
 
-**model.go** - Initialization:
+### Phase 2: Difficulty System ✅
+
+**model.go** - getDifficultySettings():
 ```go
-func New() Model {
-    return Model{
-        state:     StateMenu,
-        width:     30,
-        height:    20,
-        speed:     100 * time.Millisecond,
-        highScore: 0,
+func (m *Model) getDifficultySettings() (initialSpeed, minSpeed time.Duration, speedDecrease int) {
+    switch m.difficulty {
+    case Easy:
+        return 180 * time.Millisecond, 100 * time.Millisecond, 2
+    case Medium:
+        return 200 * time.Millisecond, 80 * time.Millisecond, 4
+    case Hard:
+        return 150 * time.Millisecond, 50 * time.Millisecond, 5
     }
-}
-
-func (m *Model) startGame() {
-    // Place snake in middle
-    centerX := m.width / 2
-    centerY := m.height / 2
-
-    m.snake = []Point{
-        {centerX, centerY},
-        {centerX - 1, centerY},
-        {centerX - 2, centerY},
-    }
-
-    m.direction = Right
-    m.nextDir = Right
-    m.score = 0
-    m.spawnFood()
-    m.state = StatePlaying
 }
 ```
 
----
+### Phase 3: Pre-Collision Detection ✅
 
-### Phase 2: Snake Movement (~100 LOC)
+**Critical fix**: Check collision BEFORE moving to show crash face
 
-**File**: `snake.go`
-
-**Key Functions**:
+**snake.go**:
 ```go
-func (m *Model) moveSnake() {
-    // Update direction (prevent 180-degree turns)
-    if !m.isOpposite(m.direction, m.nextDir) {
-        m.direction = m.nextDir
-    }
-
+func (m *Model) moveSnake() bool {
     // Calculate new head position
-    head := m.snake[0]
-    var newHead Point
+    newHead := calculateNewPosition()
 
-    switch m.direction {
-    case Up:
-        newHead = Point{head.X, head.Y - 1}
-    case Down:
-        newHead = Point{head.X, head.Y + 1}
-    case Left:
-        newHead = Point{head.X - 1, head.Y}
-    case Right:
-        newHead = Point{head.X + 1, head.Y}
+    // Check collision BEFORE moving (shows crash face!)
+    if m.wouldCollide(newHead) {
+        return false // Don't move
     }
 
-    // Add new head
-    m.snake = append([]Point{newHead}, m.snake...)
-
-    // Check if ate food
-    if newHead == m.food {
-        m.score++
-        m.spawnFood()
-        // Snake grows (don't remove tail)
-    } else {
-        // Remove tail (snake moves forward)
-        m.snake = m.snake[:len(m.snake)-1]
-    }
-}
-
-func (m *Model) isOpposite(d1, d2 Direction) bool {
-    return (d1 == Up && d2 == Down) ||
-           (d1 == Down && d2 == Up) ||
-           (d1 == Left && d2 == Right) ||
-           (d1 == Right && d2 == Left)
+    // Move snake...
+    return true
 }
 ```
 
----
-
-### Phase 3: Collision Detection (~80 LOC)
-
-**File**: `collision.go`
-
-**Functions**:
+**collision.go**:
 ```go
-func (m *Model) checkCollision() bool {
-    head := m.snake[0]
-
+func (m *Model) wouldCollide(pos Point) bool {
     // Wall collision
-    if head.X < 0 || head.X >= m.width ||
-       head.Y < 0 || head.Y >= m.height {
+    if pos.X < 0 || pos.X >= m.width ||
+       pos.Y < 0 || pos.Y >= m.height {
         return true
     }
 
-    // Self collision (check if head hits body)
-    for i := 1; i < len(m.snake); i++ {
-        if head == m.snake[i] {
+    // Self collision
+    for i := 0; i < len(m.snake)-1; i++ {
+        if pos == m.snake[i] {
             return true
         }
     }
-
     return false
 }
-
-func (m *Model) gameOver() {
-    m.state = StateGameOver
-    if m.score > m.highScore {
-        m.highScore = m.score
-        // Could save to file
-    }
-}
 ```
 
----
+### Phase 4: Crash Animation ✅
 
-### Phase 4: Food System (~60 LOC)
-
-**File**: `food.go`
-
+**update.go**:
 ```go
-func (m *Model) spawnFood() {
-    // Keep trying random positions until we find an empty spot
-    for {
-        food := Point{
-            X: rand.Intn(m.width),
-            Y: rand.Intn(m.height),
-        }
+type CrashDelayMsg time.Time
 
-        // Check if food spawned on snake
-        onSnake := false
-        for _, segment := range m.snake {
-            if food == segment {
-                onSnake = true
-                break
-            }
-        }
-
-        if !onSnake {
-            m.food = food
-            return
-        }
-    }
-}
-```
-
----
-
-### Phase 5: Update Loop (~60 LOC)
-
-**File**: `update.go`
-
-```go
-type TickMsg time.Time
-
-func tickCmd(d time.Duration) tea.Cmd {
-    return tea.Tick(d, func(t time.Time) tea.Msg {
-        return TickMsg(t)
+func crashDelayCmd() tea.Cmd {
+    return tea.Tick(1*time.Second, func(t time.Time) tea.Msg {
+        return CrashDelayMsg(t)
     })
 }
 
-func (m Model) Init() tea.Cmd {
-    return tea.Batch(
-        tea.WindowSize(),
-        tickCmd(m.speed),
-    )
-}
-
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    switch msg := msg.(type) {
-    case tea.WindowSizeMsg:
-        m.termWidth = msg.Width
-        m.termHeight = msg.Height
-        return m, nil
-
-    case tea.KeyMsg:
-        return m.handleKeyPress(msg)
-
-    case TickMsg:
-        if m.state == StatePlaying {
-            m.moveSnake()
-
-            if m.checkCollision() {
-                m.gameOver()
-            }
-
-            // Speed up as score increases
-            newSpeed := 100*time.Millisecond - time.Duration(m.score)*2*time.Millisecond
-            if newSpeed < 30*time.Millisecond {
-                newSpeed = 30 * time.Millisecond
-            }
-            m.speed = newSpeed
+case TickMsg:
+    if m.state == StatePlaying {
+        if !m.moveSnake() {
+            m.crash()
+            return m, crashDelayCmd() // 1-second pause
         }
-
-        return m, tickCmd(m.speed)
     }
 
-    return m, nil
-}
+case CrashDelayMsg:
+    if m.state == StateCrashed {
+        m.gameOver()
+    }
 ```
 
----
+### Phase 5: Visual Rendering ✅
 
-### Phase 6: Keyboard Input (~50 LOC)
-
-**File**: `update_keyboard.go`
-
+**view.go** - Emoji rendering with state-based expressions:
 ```go
-func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-    switch m.state {
-    case StateMenu:
-        switch msg.String() {
-        case "enter":
-            m.startGame()
-            return m, tickCmd(m.speed)
-        }
+// Game board with visible walls
+for y := -1; y <= m.height; y++ {
+    for x := -1; x <= m.width; x++ {
+        point := Point{x, y}
+        isWall := x == -1 || x == m.width || y == -1 || y == m.height
 
-    case StatePlaying:
-        switch msg.String() {
-        case "up", "k", "w":
-            m.nextDir = Up
-        case "down", "j", "s":
-            m.nextDir = Down
-        case "left", "h", "a":
-            m.nextDir = Left
-        case "right", "l", "d":
-            m.nextDir = Right
-        case "p", " ":
-            m.state = StatePaused
-        }
-
-    case StatePaused:
-        switch msg.String() {
-        case "p", " ":
-            m.state = StatePlaying
-        }
-
-    case StateGameOver:
-        switch msg.String() {
-        case "r":
-            m.startGame()
-            return m, tickCmd(m.speed)
-        }
-    }
-
-    return m, nil
-}
-```
-
----
-
-### Phase 7: Rendering (~100 LOC)
-
-**File**: `view.go`
-
-```go
-func (m Model) View() string {
-    switch m.state {
-    case StateMenu:
-        return m.renderMenu()
-    case StatePlaying, StatePaused:
-        return m.renderGame()
-    case StateGameOver:
-        return m.renderGameOver()
-    }
-    return ""
-}
-
-func (m Model) renderGame() string {
-    var b strings.Builder
-
-    // Top border with score
-    b.WriteString("┌" + strings.Repeat("─", m.width*2) + "┐\n")
-    b.WriteString(fmt.Sprintf("│  Score: %d    High: %d%s│\n",
-        m.score, m.highScore,
-        strings.Repeat(" ", m.width*2-20)))
-
-    b.WriteString("├" + strings.Repeat("─", m.width*2) + "┤\n")
-
-    // Game board
-    for y := 0; y < m.height; y++ {
-        b.WriteString("│")
-        for x := 0; x < m.width; x++ {
-            point := Point{x, y}
-
-            if point == m.snake[0] {
-                // Snake head
-                b.WriteString(headStyle.Render("●●"))
-            } else if m.isSnakeBody(point) {
-                // Snake body
-                b.WriteString(bodyStyle.Render("●●"))
-            } else if point == m.food {
-                // Food
-                b.WriteString(foodStyle.Render("◆◆"))
+        if isWall {
+            b.WriteString(wallStyle.Render("▓▓"))
+        } else if point == m.snake[0] {
+            if m.state == StateCrashed {
+                b.WriteString(headCrashedStyle.Render("😵"))
+            } else if m.justAte {
+                b.WriteString(headEatingStyle.Render("😮"))
             } else {
-                // Empty space
-                b.WriteString("  ")
+                b.WriteString(headStyle.Render("😊"))
             }
+        } else if m.isSnakeBody(point) {
+            b.WriteString(bodyStyle.Render("●●"))
+        } else if point == m.food {
+            b.WriteString(foodStyle.Render("🍎"))
+        } else {
+            b.WriteString("  ")
         }
-        b.WriteString("│\n")
     }
-
-    // Bottom border
-    b.WriteString("└" + strings.Repeat("─", m.width*2) + "┘\n")
-
-    if m.state == StatePaused {
-        b.WriteString("\nPAUSED - Press P to continue\n")
-    } else {
-        b.WriteString("\nPress ↑↓←→ to move | P to pause | Q to quit\n")
-    }
-
-    return lipgloss.Place(m.termWidth, m.termHeight,
-        lipgloss.Center, lipgloss.Center, b.String())
 }
 
-func (m Model) isSnakeBody(point Point) bool {
-    for _, segment := range m.snake {
-        if point == segment {
-            return true
-        }
+// Wrap in Lipgloss rounded border
+bordered := gameBorderStyle.Render(b.String())
+```
+
+### Phase 6: Difficulty Selection Screen ✅
+
+**view.go** - renderDifficultySelect():
+```go
+difficulties := []struct{
+    diff        Difficulty
+    name        string
+    description string
+}{
+    {Easy, "🟢 EASY", "Gentle pace - 180ms start, 100ms max"},
+    {Medium, "🟡 MEDIUM", "Balanced challenge - 200ms start, 80ms max"},
+    {Hard, "🔴 HARD", "Fast & intense - 150ms start, 50ms max"},
+}
+
+for _, d := range difficulties {
+    if d.diff == m.selectedDifficulty {
+        b.WriteString(selectedDifficultyStyle.Render("► " + d.name))
+    } else {
+        b.WriteString(difficultyStyle.Render("  " + d.name))
     }
-    return false
 }
 ```
 
 ---
 
-## 🎨 Visual Design
+## 🎨 Visual Design (As Implemented)
 
-**File**: `styles.go`
-
+**styles.go**:
 ```go
+// Snake emoji styles
 var (
     headStyle = lipgloss.NewStyle().
-        Foreground(lipgloss.Color("46")).  // Green
+        Foreground(lipgloss.Color("46")).  // Bright green
         Bold(true)
 
-    bodyStyle = lipgloss.NewStyle().
-        Foreground(lipgloss.Color("82"))   // Light green
+    headEatingStyle = lipgloss.NewStyle().
+        Foreground(lipgloss.Color("226")). // Yellow flash
+        Bold(true)
 
-    foodStyle = lipgloss.NewStyle().
+    headCrashedStyle = lipgloss.NewStyle().
         Foreground(lipgloss.Color("196")). // Red
         Bold(true)
 
-    scoreStyle = lipgloss.NewStyle().
-        Foreground(lipgloss.Color("226")). // Yellow
+    bodyStyle = lipgloss.NewStyle().
+        Foreground(lipgloss.Color("46"))   // Bright green (matches head)
+
+    foodStyle = lipgloss.NewStyle().
         Bold(true)
+
+    wallStyle = lipgloss.NewStyle().
+        Foreground(lipgloss.Color("240")) // Dark gray
 )
+
+// Border with no padding (walls handle spacing)
+gameBorderStyle = lipgloss.NewStyle().
+    Border(lipgloss.RoundedBorder()).
+    BorderForeground(lipgloss.Color("46"))
 ```
 
 ---
 
 ## ✅ Implementation Checklist
 
-### Part 1: Setup
-- [ ] Create all 9 files in `games/snake/`
-- [ ] Define types (Direction, Point, GameState, Model)
-- [ ] Implement `New()` and `startGame()`
+### Part 1: Setup ✅
+- [x] Create all 9 files in `games/snake/`
+- [x] Define types (Direction, Point, GameState, Model, Difficulty)
+- [x] Implement `New()` and `startGame()`
 
-### Part 2: Core Movement
-- [ ] Implement `moveSnake()` in `snake.go`
-- [ ] Handle direction changes
-- [ ] Test: Snake moves continuously
+### Part 2: Core Movement ✅
+- [x] Implement `moveSnake()` in `snake.go`
+- [x] Handle direction changes with buffer
+- [x] Prevent 180-degree turns
+- [x] Pre-collision detection
 
-### Part 3: Food System
-- [ ] Implement `spawnFood()` in `food.go`
-- [ ] Check if snake ate food
-- [ ] Make snake grow when eating
-- [ ] Test: Eating food increases score
+### Part 3: Food System ✅
+- [x] Implement `spawnFood()` in `food.go`
+- [x] Check if snake ate food
+- [x] Make snake grow when eating
+- [x] Eating animation (😮 surprise face)
 
-### Part 4: Collision
-- [ ] Implement `checkCollision()` in `collision.go`
-- [ ] Detect wall hits
-- [ ] Detect self-collision
-- [ ] Test: Game over on collision
+### Part 4: Collision ✅
+- [x] Implement `wouldCollide()` for pre-check
+- [x] Implement `checkCollision()` in `collision.go`
+- [x] Detect wall hits
+- [x] Detect self-collision
+- [x] Crash animation (😵 dizzy face, 1-second pause)
 
-### Part 5: Input
-- [ ] Handle arrow keys in `update_keyboard.go`
-- [ ] Prevent 180-degree turns
-- [ ] Buffer direction changes
-- [ ] Test: Smooth direction control
+### Part 5: Input ✅
+- [x] Handle arrow keys in `update_keyboard.go`
+- [x] Support WASD and HJKL alternatives
+- [x] Difficulty selection navigation (↑↓)
+- [x] Buffer direction changes
 
-### Part 6: Rendering
-- [ ] Render game board in `view.go`
-- [ ] Draw snake with distinct head/body
-- [ ] Draw food
-- [ ] Show score
-- [ ] Test: Game looks good on screen
+### Part 6: Rendering ✅
+- [x] Render game board in `view.go`
+- [x] Draw emoji snake with expressions
+- [x] Draw apple food (🍎)
+- [x] Draw visible walls (▓▓)
+- [x] Lipgloss RoundedBorder
+- [x] Show score and high score
+- [x] Difficulty selection screen
 
-### Part 7: Polish
-- [ ] Add pause functionality
-- [ ] Show game over screen
-- [ ] Add restart option
-- [ ] Increase speed as score increases
-- [ ] Save high score
+### Part 7: Polish ✅
+- [x] Add pause functionality
+- [x] Show game over screen with restart option
+- [x] Increase speed progressively based on difficulty
+- [x] Save high score in memory
+- [x] Difficulty selection system
+- [x] Crash animation with delay
+- [x] Eating animation with visual feedback
 
 ---
 
-## 🎯 Success Criteria
+## 🎯 Success Criteria - ALL MET! ✅
 
-When complete, you should be able to:
-1. ✅ Control snake with arrow keys
+1. ✅ Control snake with arrow keys (+ WASD/HJKL)
 2. ✅ Eat food to grow and score
-3. ✅ Game over on wall/self collision
+3. ✅ Game over on wall/self collision with crash animation
 4. ✅ See score and high score
 5. ✅ Pause and resume
-6. ✅ Restart after game over
+6. ✅ Restart after game over (keeps difficulty)
+7. ✅ **BONUS**: Emoji snake with expressions
+8. ✅ **BONUS**: Three difficulty levels
+9. ✅ **BONUS**: Visible walls for clear boundaries
+10. ✅ **BONUS**: Crash face always visible
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Build & Run
 
 ```bash
-cd ~/projects/TUIClassics/games/snake
+# Build from snake worktree
+cd ~/projects/TUIClassics-snake
+go build -o bin/snake ./cmd/snake
+./bin/snake
 
-# Create files
-touch types.go model.go update.go update_keyboard.go view.go styles.go snake.go collision.go food.go
-
-# Implementation order:
-# 1. types.go - Define all types
-# 2. model.go - New() and startGame()
-# 3. snake.go - moveSnake()
-# 4. food.go - spawnFood()
-# 5. collision.go - checkCollision()
-# 6. update.go - Game loop
-# 7. update_keyboard.go - Controls
-# 8. view.go - Rendering
-# 9. styles.go - Colors
-
-# Register in menu (games/menu/model.go)
-
-# Build
-cd ../..
+# Or from main project
+cd ~/projects/TUIClassics
 make classics
-./bin/classics
+./bin/classics  # Select Snake from menu
+```
+
+**Registered in menu**: Hotkey **N** (for s**N**ake)
+
+---
+
+## 💡 Key Implementation Lessons
+
+1. **Aspect Ratio Matters**: Changed from 30×20 to 24×20 grid for better visual balance
+2. **Pre-Collision Detection**: Check collision BEFORE moving to show crash face
+3. **Emoji Width**: Emojis are 2-char wide, use `●●` for body to match
+4. **Border Padding Issue**: Removed padding, added visible walls instead
+5. **Easy Mode Paradox**: Too slow feels choppy (250ms → 180ms fixed this)
+6. **Direction Buffer**: Essential for smooth controls at any speed
+7. **Crash Animation**: 1-second pause gives player moment to process
+8. **Lipgloss Borders**: `RoundedBorder()` looks professional with no manual drawing
+
+---
+
+## 🎮 Game Flow
+
+```
+Main Menu (ENTER)
+    ↓
+Difficulty Selection (↑↓ to select, ENTER to start, ESC to go back)
+    ↓
+Playing (arrow keys to move, P to pause)
+    ↓
+Crash Animation (😵 for 1 second)
+    ↓
+Game Over (R to restart with same difficulty, M for menu, Q to quit)
 ```
 
 ---
 
-## 💡 Pro Tips
+## 📊 Statistics
 
-1. **Start with static rendering** - Draw board first
-2. **Test movement early** - Get snake moving smoothly
-3. **Direction buffer** - Store next direction to prevent missed inputs
-4. **Speed curve** - Don't make it too fast too quickly
-5. **Visual feedback** - Distinct head color helps orientation
-
----
-
-## 🔜 Future Enhancements
-
-- **Difficulty levels** - Different board sizes/speeds
-- **Power-ups** - Slow down, speed up, invincibility
-- **Obstacles** - Walls in the middle of board
-- **Multiplayer** - Two snakes competing
-- **Different game modes** - Walls that wrap around, etc.
+- **Total Lines of Code**: ~550 LOC
+- **Files**: 9 game files + 1 main.go
+- **Game States**: 6 (Menu, DifficultySelect, Playing, Paused, Crashed, GameOver)
+- **Snake Expressions**: 3 (😊 😮 😵)
+- **Difficulty Levels**: 3 (Easy, Medium, Hard)
+- **Grid Size**: 24×20 cells (playable) + 26×22 with walls
+- **Speed Range**: 50ms - 200ms depending on difficulty
+- **Control Schemes**: 3 (Arrows, WASD, HJKL)
 
 ---
 
-**Ready to slither! 🐍 Let's build Snake!**
+## 🔜 Possible Future Enhancements
+
+- [ ] **Local high score persistence** - Save to file
+- [ ] **Power-ups** - Slow down, speed up, invincibility
+- [ ] **Obstacles** - Walls in middle of board
+- [ ] **Multiple food types** - Different point values
+- [ ] **Snake skins** - Different emoji sets
+- [ ] **Sound effects** - Eating, crash, etc.
+- [ ] **Leaderboard** - Top 10 scores
+- [ ] **Custom difficulty** - Player-defined settings
+
+---
+
+**Status**: ✅ Complete and polished! Ready to merge to main.
+
+**Highlights**: Emoji expressions, difficulty selection, visible walls, crash animation, perfect aspect ratio, responsive controls across all difficulty levels.
+
+🐍 **The snake is ready to slither!**

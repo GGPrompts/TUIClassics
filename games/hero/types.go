@@ -49,6 +49,7 @@ type Model struct {
 	combo      int
 	multiplier int
 	lastHit    HitResult
+	lastHitLane int // Track which lane was last hit (0-4)
 
 	// Song data
 	currentSong *Song

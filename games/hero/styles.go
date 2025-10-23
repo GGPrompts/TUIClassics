@@ -13,9 +13,9 @@ var laneColors = []lipgloss.Color{
 
 // Hit result colors
 var (
-	perfectColor = lipgloss.Color("46")  // Green
-	goodColor    = lipgloss.Color("226") // Yellow
-	okColor      = lipgloss.Color("214") // Orange
+	perfectColor = lipgloss.Color("220") // Gold
+	goodColor    = lipgloss.Color("46")  // Green
+	okColor      = lipgloss.Color("226") // Yellow
 	missColor    = lipgloss.Color("196") // Red
 )
 
@@ -56,6 +56,10 @@ var (
 	helpStyle = lipgloss.NewStyle().
 			Foreground(dimColor).
 			Align(lipgloss.Center)
+
+	// Base lane style (will be customized per lane with different border colors)
+	baseLaneStyle = lipgloss.NewStyle().
+			Border(lipgloss.NormalBorder(), true, true, true, true)
 )
 
 // getLaneColor returns the color for a specific lane
@@ -64,6 +68,12 @@ func getLaneColor(lane int) lipgloss.Color {
 		return laneColors[lane]
 	}
 	return textColor
+}
+
+// getLaneBorderStyle returns a styled border for a specific lane
+func getLaneBorderStyle(lane int) lipgloss.Style {
+	return baseLaneStyle.Copy().
+		BorderForeground(getLaneColor(lane))
 }
 
 // getHitResultColor returns the color for a hit result

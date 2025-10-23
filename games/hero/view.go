@@ -68,9 +68,9 @@ func (m Model) renderGame() string {
 	b.WriteString("\n")
 	b.WriteString(m.renderScore())
 
-	// Hit feedback
+	// Hit feedback (always reserve space to prevent footer shifting)
+	b.WriteString("\n")
 	if m.showHitFeedback {
-		b.WriteString("\n")
 		hitText := getHitResultText(m.lastHit)
 		hitColor := getHitResultColor(m.lastHit)
 		feedbackStyle := lipgloss.NewStyle().Foreground(hitColor).Bold(true)
@@ -86,92 +86,61 @@ func (m Model) renderGame() string {
 
 // renderLanes renders the 5 lanes with notes and hit zone
 func (m Model) renderLanes() string {
-	var b strings.Builder
 	laneKeys := []string{"A", "S", "D", "F", "SPC"}
+	lanes := make([]string, 5)
 
-	// Top border and lane headers
-	b.WriteString("     +")
-	for i := 0; i < 5; i++ {
-		b.WriteString(strings.Repeat("-", m.laneWidth))
-		if i < 4 {
-			b.WriteString("+")
+	// Build each lane column separately
+	for lane := 0; lane < 5; lane++ {
+		var laneContent strings.Builder
+
+		// Lane key header - use hit feedback color if this lane was just hit
+		var headerColor lipgloss.Color
+		if m.showHitFeedback && m.lastHitLane == lane {
+			headerColor = getHitResultColor(m.lastHit)
+		} else {
+			headerColor = dimColor // Gray by default
 		}
-	}
-	b.WriteString("+\n")
+		keyStyle := laneHeaderStyle.Copy().Foreground(headerColor)
+		header := keyStyle.Render(laneKeys[lane])
+		laneContent.WriteString(centerString(header, m.laneWidth))
+		laneContent.WriteString("\n")
 
-	// Lane key labels
-	b.WriteString("     |")
-	for i := 0; i < 5; i++ {
-		keyStyle := laneHeaderStyle.Copy().Foreground(getLaneColor(i))
-		label := keyStyle.Render(laneKeys[i])
-		b.WriteString(centerString(label, m.laneWidth))
-		b.WriteString("|")
-	}
-	b.WriteString("\n")
+		// Separator line below header
+		laneContent.WriteString(strings.Repeat("─", m.laneWidth))
+		laneContent.WriteString("\n")
 
-	// Separator
-	b.WriteString("     +")
-	for i := 0; i < 5; i++ {
-		b.WriteString(strings.Repeat("-", m.laneWidth))
-		if i < 4 {
-			b.WriteString("+")
-		}
-	}
-	b.WriteString("+\n")
-
-	// Note area
-	for y := 0; y < NoteAreaHeight; y++ {
-		b.WriteString("     |")
-		for lane := 0; lane < 5; lane++ {
-			// Check if there's a note at this position
+		// Note area (25 rows)
+		for y := 0; y < NoteAreaHeight; y++ {
 			hasNote := m.hasNoteAt(lane, y)
 
 			if hasNote {
 				noteSymbol := noteStyle.Copy().
 					Foreground(getLaneColor(lane)).
 					Render("O")
-				b.WriteString(centerString(noteSymbol, m.laneWidth))
+				laneContent.WriteString(centerString(noteSymbol, m.laneWidth))
 			} else {
-				b.WriteString(strings.Repeat(" ", m.laneWidth))
+				laneContent.WriteString(strings.Repeat(" ", m.laneWidth))
 			}
-
-			b.WriteString("|")
+			laneContent.WriteString("\n")
 		}
-		b.WriteString("\n")
-	}
 
-	// Hit zone separator
-	b.WriteString("     +")
-	for i := 0; i < 5; i++ {
-		b.WriteString(strings.Repeat("-", m.laneWidth))
-		if i < 4 {
-			b.WriteString("+")
-		}
-	}
-	b.WriteString("+\n")
+		// Separator line above hit zone
+		laneContent.WriteString(strings.Repeat("─", m.laneWidth))
+		laneContent.WriteString("\n")
 
-	// Hit zone
-	b.WriteString("     |")
-	for lane := 0; lane < 5; lane++ {
+		// Hit zone
 		hitBox := hitZoneStyle.Copy().
 			Foreground(getLaneColor(lane)).
 			Render("[" + laneKeys[lane] + "]")
-		b.WriteString(centerString(hitBox, m.laneWidth))
-		b.WriteString("|")
-	}
-	b.WriteString("\n")
+		laneContent.WriteString(centerString(hitBox, m.laneWidth))
 
-	// Bottom border
-	b.WriteString("     +")
-	for i := 0; i < 5; i++ {
-		b.WriteString(strings.Repeat("-", m.laneWidth))
-		if i < 4 {
-			b.WriteString("+")
-		}
+		// Apply colored border to this lane
+		borderedLane := getLaneBorderStyle(lane).Render(laneContent.String())
+		lanes[lane] = borderedLane
 	}
-	b.WriteString("+")
 
-	return b.String()
+	// Join all lanes horizontally
+	return lipgloss.JoinHorizontal(lipgloss.Top, lanes...)
 }
 
 // hasNoteAt checks if there's a note at a specific lane and Y position
