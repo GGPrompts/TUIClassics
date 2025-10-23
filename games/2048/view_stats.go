@@ -62,7 +62,7 @@ func (m Model) renderScoreTable(scores *stats.ScoreData) string {
 
 	// Build table content
 	var content strings.Builder
-	content.WriteString("┌─ High Scores ───────────────────────────────────────┐\n")
+	content.WriteString("┌─ High Scores ──────────────────────────────────────────┐\n")
 	content.WriteString("│ Period   │ Score     │ Date                            │\n")
 	content.WriteString("├──────────┼───────────┼─────────────────────────────────┤\n")
 
