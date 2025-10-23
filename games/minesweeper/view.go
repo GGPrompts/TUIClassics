@@ -21,6 +21,8 @@ func (m Model) View() string {
 		return m.renderWin()
 	case StateLost:
 		return m.renderLoss()
+	case StateStats:
+		return m.renderStats()
 	default:
 		return ""
 	}
@@ -40,6 +42,7 @@ Select Difficulty:
 [2] Medium   - 16x16 (40 mines)
 [3] Hard     - 30x16 (99 mines)
 
+[S] View Stats
 [Q] Quit
 `
 
@@ -333,7 +336,17 @@ func (m Model) renderWin() string {
 	b.WriteString(statsStyle.Width(m.termWidth).Align(lipgloss.Center).Render(stats))
 	b.WriteString("\n\n")
 
-	help := "[R] Restart  |  [N] New Game  |  [Q] Quit"
+	// Show achievements if any
+	if len(m.achievements) > 0 {
+		achievementStyle := lipgloss.NewStyle().Foreground(colorSuccess).Bold(true)
+		for _, ach := range m.achievements {
+			b.WriteString(lipgloss.NewStyle().Width(m.termWidth).Align(lipgloss.Center).Render(achievementStyle.Render(ach)))
+			b.WriteString("\n")
+		}
+		b.WriteString("\n")
+	}
+
+	help := "[R] Restart  |  [N] New Game  |  [S] View Stats  |  [Q] Quit"
 	b.WriteString(helpStyle.Width(m.termWidth).Render(help))
 
 	return b.String()

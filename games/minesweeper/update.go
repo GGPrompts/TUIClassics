@@ -88,6 +88,19 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, tick()
 		}
 
+	case "s":
+		// Show stats
+		if m.state == StateMenu || m.state == StateWon || m.state == StateLost {
+			m.previousState = m.state
+			m.state = StateStats
+		}
+
+	case "esc":
+		// Return from stats view
+		if m.state == StateStats {
+			m.state = m.previousState
+		}
+
 	// Keyboard navigation (for accessibility)
 	case "up", "k":
 		if m.state == StatePlaying && m.cursorY > 0 {

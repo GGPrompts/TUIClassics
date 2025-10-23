@@ -26,6 +26,7 @@ const (
 	StateLost                     // Player hit a mine
 	StatePaused                   // Game paused
 	StateExploding                // Explosion animation in progress
+	StateStats                    // Viewing statistics/leaderboard
 )
 
 // SmileyState represents the smiley face button state
@@ -92,6 +93,10 @@ type Model struct {
 
 	// High scores
 	bestTime time.Duration
+
+	// Stats/Achievements
+	achievements  []string  // Latest achievements to display
+	previousState GameState // For returning from stats view
 }
 
 // Difficulty configurations

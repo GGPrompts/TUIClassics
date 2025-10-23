@@ -3,6 +3,8 @@ package minesweeper
 import (
 	"math/rand"
 	"time"
+
+	"github.com/GGPrompts/TUIClassics/internal/stats"
 )
 
 // New creates a new minesweeper game
@@ -201,6 +203,37 @@ func (m *Model) checkWinCondition() {
 		if m.bestTime == 0 || m.elapsedTime < m.bestTime {
 			m.bestTime = m.elapsedTime
 		}
+
+		// Record stats and achievements
+		m.recordStats()
+	}
+}
+
+// recordStats records the game result in the stats database
+func (m *Model) recordStats() {
+	// Load current stats
+	scores, err := stats.Load()
+	if err != nil {
+		return // Silently fail if stats can't be loaded
+	}
+
+	// Get difficulty name
+	config := difficultyConfigs[m.difficulty]
+	difficultyName := config.name
+
+	// Update stats and get achievements
+	timeSeconds := int(m.elapsedTime.Seconds())
+	achievements := stats.UpdateMinesweeperScore(scores, difficultyName, timeSeconds)
+
+	// Save updated stats
+	if err := stats.Save(scores); err != nil {
+		return // Silently fail if stats can't be saved
+	}
+
+	// Store achievements for display
+	m.achievements = make([]string, len(achievements))
+	for i, ach := range achievements {
+		m.achievements[i] = ach.String()
 	}
 }
 
