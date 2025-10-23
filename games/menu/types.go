@@ -47,4 +47,8 @@ type Model struct {
 	// Terminal dimensions
 	termWidth  int
 	termHeight int
+
+	// Double-click detection
+	lastClickTime   time.Time
+	lastClickButton int
 }

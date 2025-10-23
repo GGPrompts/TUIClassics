@@ -14,19 +14,19 @@ import (
 func New() Model {
 	games := []GameInfo{
 		{
-			Name:        "Minesweeper",
+			Name:        "Minesweeper 💣",
 			Description: "Classic mine-finding puzzle game",
 			Hotkey:      "m",
 			NewFunc:     func() tea.Model { return minesweeper.New() },
 		},
 		{
-			Name:        "Solitaire",
+			Name:        "Solitaire 🃏",
 			Description: "Klondike card game",
 			Hotkey:      "s",
 			NewFunc:     func() tea.Model { return solitaire.New() },
 		},
 		{
-			Name:        "2048",
+			Name:        "2048 🔢",
 			Description: "Slide tiles to reach 2048",
 			Hotkey:      "2",
 			NewFunc:     func() tea.Model { return game2048.New() },
@@ -38,13 +38,13 @@ func New() Model {
 			NewFunc:     func() tea.Model { return balatro.New() },
 		},
 		{
-			Name:        "Keyboard Hero",
+			Name:        "Keyboard Hero 🎸",
 			Description: "Rhythm game - hit keys to the beat!",
 			Hotkey:      "h",
 			NewFunc:     func() tea.Model { return hero.New() },
 		},
 		{
-			Name:        "Snake",
+			Name:        "Snake 🐍",
 			Description: "Classic snake game - eat, grow, survive!",
 			Hotkey:      "n",
 			NewFunc:     func() tea.Model { return snake.New() },
@@ -52,9 +52,10 @@ func New() Model {
 	}
 
 	m := Model{
-		state:       StateMainMenu,
-		games:       games,
-		selectedIdx: 0,
+		state:           StateMainMenu,
+		games:           games,
+		selectedIdx:     0,
+		lastClickButton: -1, // Initialize to -1 (no previous click)
 	}
 	m.landingPage = NewLandingPage(80, 24, games) // Default size, will be updated on WindowSizeMsg
 	return m

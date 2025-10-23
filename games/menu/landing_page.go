@@ -358,6 +358,11 @@ type LandingPage struct {
 	menuItems    []string
 	useStarfield bool // Toggle between starfield and checkered background
 	scrollOffset int  // Vertical scroll offset for large game lists
+
+	// Cached window position for click detection
+	windowX int
+	windowY int
+	windowWidth int
 }
 
 // NewLandingPage creates the landing page with dynamic games list
@@ -534,6 +539,43 @@ func (lp *LandingPage) HandleClick(x, y int) int {
 	return -1
 }
 
+// HandleCloseButtonClick checks if the X button on the window title bar was clicked
+// Returns true if the X was clicked (easter egg!)
+func (lp *LandingPage) HandleCloseButtonClick(x, y int) bool {
+	// Use cached window position from last render
+	// Window structure (each line):
+	//   Line 0: Outer border top
+	//   Line 1: Inner border top
+	//   Line 2: Padding
+	//   Line 3: TITLE BAR (blue "Game Launcher" with X button)
+
+	// X button is " X " (3 chars) on the right side of title bar
+	titleBarY := lp.windowY + 3
+
+	// X position calculation:
+	// titleLine = titleBar (width-4 chars) + closeBtn (3 chars)
+	// titleLine starts at windowX + 3 (outer border + inner border + padding)
+	// closeBtn " X " is the last 3 chars of titleLine
+
+	// For width=40: titleBar=36, closeBtn=3, total titleLine=39
+	// X starts at: windowX + 3 + 36 = windowX + 39
+	// For generalized width, X starts at: windowX + 3 + (width - 4)
+	// But we don't have the original width parameter, so use windowWidth:
+	// windowWidth = titleLine + borders/padding = 39 + 6 = 45
+	// So X starts at: windowX + windowWidth - 6 (for 3-char " X " and 3 chars of right borders)
+
+	// Make click area slightly generous (±1 char) for easier clicking
+	closeButtonLeft := lp.windowX + lp.windowWidth - 7
+	closeButtonRight := lp.windowX + lp.windowWidth - 3
+
+	// Check if click is within X button bounds
+	if y == titleBarY && x >= closeButtonLeft && x <= closeButtonRight {
+		return true
+	}
+
+	return false
+}
+
 // Render creates the complete landing page
 func (lp *LandingPage) Render() string {
 	// Layer 1: Background (starfield or checkered)
@@ -668,6 +710,7 @@ func (lp *LandingPage) Render() string {
 	}
 
 	// Overlay window
+	// Store position for click detection (on first line only)
 	for i, line := range windowLines {
 		y := windowY + i
 		if y >= 0 && y < lp.height {
@@ -676,6 +719,14 @@ func (lp *LandingPage) Render() string {
 			if x < 0 {
 				x = 0
 			}
+
+			// Cache window position on first line for click detection
+			if i == 0 {
+				lp.windowX = x
+				lp.windowY = windowY
+				lp.windowWidth = windowWidth
+			}
+
 			result[y] = overlayLine(result[y], line, x, lp.width)
 		}
 	}
