@@ -330,7 +330,7 @@ func (m Model) renderWin() string {
 		formatDuration(m.elapsedTime),
 		formatDuration(m.bestTime),
 	)
-	b.WriteString(statsStyle.Width(m.termWidth).Render(stats))
+	b.WriteString(statsStyle.Width(m.termWidth).Align(lipgloss.Center).Render(stats))
 	b.WriteString("\n\n")
 
 	help := "[R] Restart  |  [N] New Game  |  [Q] Quit"
