@@ -37,20 +37,19 @@ func (m Model) handleMouseEvent(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 				if buttonIdx == m.lastClickButton && timeSinceLastClick < doubleClickThreshold {
 					// Double-click detected! Launch immediately
 					selection := m.landingPage.GetSelectedItem()
-					switch selection {
-					case "Minesweeper 💣":
-						cmd := m.launchGame(0)
+
+					// Check if it's the Exit button
+					if selection == "Exit 🚪" {
+						return m, tea.Quit
+					}
+
+					// For all games, use the button index to launch
+					if buttonIdx >= 0 && buttonIdx < len(m.games) {
+						cmd := m.launchGame(buttonIdx)
 						// Reset click tracking after launch
 						m.lastClickTime = time.Time{}
 						m.lastClickButton = -1
 						return m, cmd
-					case "Solitaire 🂡":
-						cmd := m.launchGame(1)
-						m.lastClickTime = time.Time{}
-						m.lastClickButton = -1
-						return m, cmd
-					case "Exit 🚪":
-						return m, tea.Quit
 					}
 				}
 
@@ -65,15 +64,16 @@ func (m Model) handleMouseEvent(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 			if buttonIdx >= 0 && buttonIdx == m.landingPage.selectedBtn {
 				// Launch the selected item
 				selection := m.landingPage.GetSelectedItem()
-				switch selection {
-				case "Minesweeper 💣":
-					cmd := m.launchGame(0)
-					return m, cmd
-				case "Solitaire 🂡":
-					cmd := m.launchGame(1)
-					return m, cmd
-				case "Exit 🚪":
+
+				// Check if it's the Exit button
+				if selection == "Exit 🚪" {
 					return m, tea.Quit
+				}
+
+				// For all games, use the button index to launch
+				if buttonIdx < len(m.games) {
+					cmd := m.launchGame(buttonIdx)
+					return m, cmd
 				}
 			}
 		}
