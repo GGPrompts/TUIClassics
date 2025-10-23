@@ -45,7 +45,7 @@ type Model struct {
 
 // Bubbletea interface methods
 func (m Model) Init() tea.Cmd {
-	return nil
+	return tea.WindowSize() // Request terminal size for proper centering
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
