@@ -20,8 +20,9 @@ func animationTick() tea.Cmd {
 type MenuState int
 
 const (
-	StateMainMenu MenuState = iota // Showing game selection menu
-	StateInGame                     // Playing a game
+	StateMainMenu   MenuState = iota // Showing game selection menu
+	StateHighScores                  // Viewing high scores/leaderboards
+	StateInGame                      // Playing a game
 )
 
 // GameInfo represents metadata about an available game
@@ -43,6 +44,9 @@ type Model struct {
 
 	// Landing page (Windows 95-style launcher)
 	landingPage *LandingPage
+
+	// High Scores view
+	currentTab int // Current tab in high scores view (0=Minesweeper, 1=2048, 2=Solitaire, 3=Snake)
 
 	// Terminal dimensions
 	termWidth  int

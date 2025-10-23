@@ -9,13 +9,22 @@ import (
 
 // View renders the menu
 func (m Model) View() string {
-	// If in game, delegate to the game's view
-	if m.state == StateInGame && m.currentGame != nil {
-		return m.currentGame.View()
-	}
+	switch m.state {
+	case StateInGame:
+		// Delegate to the game's view
+		if m.currentGame != nil {
+			return m.currentGame.View()
+		}
+		return "No game loaded"
 
-	// Render main menu
-	return m.renderMainMenu()
+	case StateHighScores:
+		// Show tabbed high scores view
+		return m.viewHighScores()
+
+	default: // StateMainMenu
+		// Render main menu
+		return m.renderMainMenu()
+	}
 }
 
 func (m Model) renderMainMenu() string {

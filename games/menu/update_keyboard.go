@@ -5,11 +5,26 @@ import (
 )
 
 func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "q", "ctrl+c", "f10":
-		// Quit the application
-		return m, tea.Quit
+	// ESC handling - return from high scores or game
+	if msg.String() == "esc" {
+		if m.state == StateHighScores {
+			m.state = StateMainMenu
+			return m, nil
+		}
+	}
 
+	// Quit keys
+	if msg.String() == "q" || msg.String() == "ctrl+c" || msg.String() == "f10" {
+		return m, tea.Quit
+	}
+
+	// State-specific handling
+	if m.state == StateHighScores {
+		return m.handleHighScoresKeys(msg)
+	}
+
+	// Main menu keys
+	switch msg.String() {
 	case "up", "k":
 		// Move selection up
 		if m.landingPage != nil {
@@ -38,12 +53,18 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case "enter", " ":
-		// Launch selected game or handle Exit
+		// Launch selected game, show high scores, or handle Exit
 		if m.landingPage != nil {
 			selection := m.landingPage.GetSelectedItem()
 			// Check if Exit button selected
 			if selection == "Exit 🚪" {
 				return m, tea.Quit
+			}
+			// Check if High Scores selected
+			if selection == "High Scores 🏆" {
+				m.state = StateHighScores
+				m.currentTab = 0 // Start with Minesweeper tab
+				return m, nil
 			}
 			// Otherwise, launch the game at selectedBtn index
 			cmd := m.launchGame(m.landingPage.selectedBtn)
@@ -67,6 +88,42 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				return m, cmd
 			}
 		}
+	}
+
+	return m, nil
+}
+
+// handleHighScoresKeys handles keyboard input in high scores view
+func (m Model) handleHighScoresKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "tab", "right", "l":
+		// Next tab
+		m.currentTab = (m.currentTab + 1) % 4 // 4 tabs total
+		return m, nil
+
+	case "shift+tab", "left", "h":
+		// Previous tab
+		m.currentTab--
+		if m.currentTab < 0 {
+			m.currentTab = 3
+		}
+		return m, nil
+
+	case "1":
+		m.currentTab = 0 // Minesweeper
+		return m, nil
+
+	case "2":
+		m.currentTab = 1 // 2048
+		return m, nil
+
+	case "3":
+		m.currentTab = 2 // Solitaire
+		return m, nil
+
+	case "4":
+		m.currentTab = 3 // Snake
+		return m, nil
 	}
 
 	return m, nil

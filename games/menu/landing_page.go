@@ -368,11 +368,12 @@ type LandingPage struct {
 // NewLandingPage creates the landing page with dynamic games list
 func NewLandingPage(width, height int, games []GameInfo) *LandingPage {
 	// Build menu items from games
-	menuItems := make([]string, len(games)+1) // +1 for Exit
+	menuItems := make([]string, len(games)+2) // +2 for High Scores and Exit
 	for i, game := range games {
 		menuItems[i] = game.Name
 	}
-	menuItems[len(games)] = "Exit 🚪"
+	menuItems[len(games)] = "High Scores 🏆"
+	menuItems[len(games)+1] = "Exit 🚪"
 
 	return &LandingPage{
 		starfield:    NewStarfield(width, height),
