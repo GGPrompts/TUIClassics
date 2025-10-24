@@ -32,3 +32,8 @@ Thumbs.db
 # Build artifacts
 dist/
 release/
+
+# Environment variables (Supabase credentials)
+.env
+.env.local
+.env.*.local

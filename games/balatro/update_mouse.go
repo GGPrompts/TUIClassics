@@ -96,21 +96,18 @@ func (m Model) getCardAtPosition(x, y int) int {
 	// Calculate content dimensions and padding
 	// This must match the rendering logic in renderGameView()
 
-	// Build sections to calculate content height (must match view.go)
+	// Build sections to calculate content height (must match view.go NEW ORDER)
 	lineCount := 0
 
 	// Game info (1 line) + blank
 	lineCount += 2
 
-	// Jokers (if any): label (1) + cards (varies) + blank
+	// Jokers (if any): label (1) + cards (5) + blank
 	if len(m.jokers) > 0 {
-		lineCount += 1 + 5 + 1 // label + joker height + blank
+		lineCount += 1 + 5 + 1
 	}
 
-	// Hand display: cards (3) + numbers (1) + blank
-	lineCount += 5 // Includes centering wrapper
-
-	// Selected card detail (if visible): varies
+	// Selected card detail (if visible)
 	if m.selectedCardIndex >= 0 && m.selectedCardIndex < len(m.hand) {
 		lineCount += 7 + 1 // Card detail panel + blank
 	}
@@ -123,8 +120,11 @@ func (m Model) getCardAtPosition(x, y int) int {
 		lineCount += 5 + 1 // Score panel + blank
 	}
 
-	// Controls: 1 line
-	lineCount += 1
+	// Hand display: cards (5 with lift) + numbers (1) + blank
+	lineCount += 5 + 1 + 1
+
+	// Controls: 2 lines (text + sort indicator)
+	lineCount += 2
 
 	// Calculate padding
 	availableHeight := m.height - 2 // -2 for title and status bars
@@ -139,18 +139,26 @@ func (m Model) getCardAtPosition(x, y int) int {
 	}
 
 	// Calculate Y position of hand display
+	// The hand is now at the BOTTOM, just above controls
+	// Must add ALL sections that come before it
 	handY := topPadding
 	handY += 2 // game info + blank
 	if len(m.jokers) > 0 {
 		handY += 1 + 5 + 1 // jokers section
 	}
-
-	// Check if click is in hand area (cards are 3 lines tall + 1 line for numbers)
-	if y < handY || y >= handY+4 {
-		return -1
+	// Add card detail section (comes before hand now!)
+	if m.selectedCardIndex >= 0 && m.selectedCardIndex < len(m.hand) {
+		handY += 7 + 1 // card detail panel + blank
 	}
+	// Add current hand info section
+	handY += 2 // current hand info + blank
+	// Add score breakdown section (if visible)
+	if m.lastScore.FinalScore > 0 {
+		handY += 5 + 1 // score breakdown + blank
+	}
+	// handY is now at the start of the hand display
 
-	// Calculate horizontal position
+	// Calculate horizontal position first
 	// Each card is 7 chars wide (5 for card + 2 spacing from join)
 	cardWidth := 7
 	totalHandWidth := len(m.hand) * cardWidth
@@ -165,11 +173,37 @@ func (m Model) getCardAtPosition(x, y int) int {
 		return -1
 	}
 
-	// Calculate which card was clicked
+	// Calculate which card column was clicked
 	cardIndex := relX / cardWidth
 
-	if cardIndex >= 0 && cardIndex < len(m.hand) {
-		return cardIndex
+	if cardIndex < 0 || cardIndex >= len(m.hand) {
+		return -1
+	}
+
+	// Check if this specific card was clicked, accounting for lift effect
+	// Played cards: lifted up 2 lines, clickable area [handY, handY+5]
+	// Non-played cards: at baseline (2 lines down), clickable area [handY+2, handY+7]
+
+	// Check if this card is played (selected for play)
+	card := m.hand[cardIndex]
+	isPlayed := false
+	for _, pc := range m.playedCards {
+		if card.Suit == pc.Suit && card.Rank == pc.Rank {
+			isPlayed = true
+			break
+		}
+	}
+
+	if isPlayed {
+		// Played card: lifted, check upper area
+		if y >= handY && y < handY+5 {
+			return cardIndex
+		}
+	} else {
+		// Non-played card: baseline, check lower area
+		if y >= handY+2 && y < handY+7 {
+			return cardIndex
+		}
 	}
 
 	return -1

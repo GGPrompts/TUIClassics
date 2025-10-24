@@ -274,10 +274,6 @@ func (m Model) renderGameView() string {
 		sections = append(sections, "")
 	}
 
-	// Hand display
-	sections = append(sections, m.renderHand())
-	sections = append(sections, "")
-
 	// Selected card detail panel
 	if m.selectedCardIndex >= 0 && m.selectedCardIndex < len(m.hand) {
 		sections = append(sections, m.renderCardDetail(m.hand[m.selectedCardIndex]))
@@ -293,6 +289,10 @@ func (m Model) renderGameView() string {
 		sections = append(sections, m.renderScoreBreakdown())
 		sections = append(sections, "")
 	}
+
+	// Hand display (moved just above controls)
+	sections = append(sections, m.renderHand())
+	sections = append(sections, "")
 
 	// Controls - centered
 	controls := m.renderGameControls()
@@ -543,7 +543,7 @@ func (m Model) renderHand() string {
 		cards = append(cards, m.renderCard(card, isSelected, isPlayed))
 	}
 
-	// Join cards horizontally with space
+	// Join cards horizontally aligned at TOP so played cards with prepended lines "lift up"
 	handDisplay := lipgloss.JoinHorizontal(lipgloss.Top, cards...)
 
 	// Add number indicators below cards
@@ -607,10 +607,6 @@ func (m Model) renderCard(card Card, selected bool, played bool) string {
 		Height(3).
 		Padding(0, 0)
 
-	if played {
-		style = style.Background(lipgloss.Color("235")) // Dim background
-	}
-
 	// Color the suit symbol
 	styledContent := strings.Replace(content, card.Suit.Symbol(),
 		lipgloss.NewStyle().Foreground(card.Suit.Color()).Render(card.Suit.Symbol()), 1)
@@ -624,7 +620,19 @@ func (m Model) renderCard(card Card, selected bool, played bool) string {
 		styledContent = strings.Replace(styledContent, enhText, styledEnhText, 1)
 	}
 
-	return style.Render(styledContent)
+	cardRendered := style.Render(styledContent)
+
+	// Add lift effect for played cards - they should appear ABOVE the baseline
+	// When joining at Top: appended lines keep card at top (lifted), prepended lines push card down
+	if played {
+		// Played cards: lift UP by keeping them at top (blank lines BELOW)
+		cardRendered = cardRendered + "\n\n"
+	} else {
+		// Non-played cards: push DOWN to baseline (blank lines ABOVE)
+		cardRendered = "\n\n" + cardRendered
+	}
+
+	return cardRendered
 }
 
 // renderCardDetail renders detailed info about a card (compact & centered)
