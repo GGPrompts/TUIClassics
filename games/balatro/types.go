@@ -25,6 +25,15 @@ const (
 	PhaseGameOver       // Loss screen
 )
 
+// SortMode represents how cards in the hand are sorted
+type SortMode int
+
+const (
+	SortNone SortMode = iota // No sorting (draw order)
+	SortBySuit                // Sort by suit (Clubs, Diamonds, Hearts, Spades)
+	SortByRank                // Sort by rank (A, 2, 3, ..., K)
+)
+
 // Model represents the application state
 type Model struct {
 	// Configuration
@@ -50,6 +59,7 @@ type Model struct {
 	hand              []Card           // Cards in player's hand
 	playedCards       []Card           // Cards selected for play
 	selectedCardIndex int              // Currently selected card for detail view (-1 = none)
+	sortMode          SortMode         // Current hand sorting mode
 	currentHandInfo   HandInfo         // Info about the currently selected hand
 	lastScore         ScoreCalculation // Last score calculation
 

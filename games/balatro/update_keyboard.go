@@ -162,6 +162,20 @@ func (m Model) handleSelectCardsKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "d", "D":
 		m.discardCards()
 		return m, nil
+
+	// S to cycle sort mode
+	case "s", "S":
+		m.cycleSortMode()
+		// Update status message to show current sort mode
+		switch m.sortMode {
+		case SortBySuit:
+			m.statusMsg = "Sorted by SUIT (Clubs → Diamonds → Hearts → Spades)"
+		case SortByRank:
+			m.statusMsg = "Sorted by RANK (A → 2 → 3 → ... → K)"
+		case SortNone:
+			m.statusMsg = "Sort: NONE (draw order)"
+		}
+		return m, nil
 	}
 
 	return m, nil

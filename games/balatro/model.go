@@ -286,3 +286,54 @@ func removeCards(hand []Card, toRemove []Card) []Card {
 
 	return result
 }
+
+// applySorting applies the current sort mode to the hand and maintains the selected card
+func (m *Model) applySorting() {
+	if len(m.hand) == 0 {
+		return
+	}
+
+	// Remember which card is currently selected
+	var selectedCard *Card
+	if m.selectedCardIndex >= 0 && m.selectedCardIndex < len(m.hand) {
+		selectedCard = &Card{
+			Suit: m.hand[m.selectedCardIndex].Suit,
+			Rank: m.hand[m.selectedCardIndex].Rank,
+		}
+	}
+
+	// Apply sorting based on current mode
+	switch m.sortMode {
+	case SortBySuit:
+		m.hand = SortCardsBySuit(m.hand)
+	case SortByRank:
+		m.hand = SortCardsByRank(m.hand)
+	case SortNone:
+		// No sorting applied
+		return
+	}
+
+	// Find the selected card in the new sorted hand
+	if selectedCard != nil {
+		for i, card := range m.hand {
+			if card.Suit == selectedCard.Suit && card.Rank == selectedCard.Rank {
+				m.selectedCardIndex = i
+				break
+			}
+		}
+	}
+}
+
+// cycleSortMode cycles through sort modes: None -> Suit -> Rank -> None
+func (m *Model) cycleSortMode() {
+	switch m.sortMode {
+	case SortNone:
+		m.sortMode = SortBySuit
+	case SortBySuit:
+		m.sortMode = SortByRank
+	case SortByRank:
+		m.sortMode = SortNone
+	}
+
+	m.applySorting()
+}

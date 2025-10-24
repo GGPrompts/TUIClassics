@@ -744,13 +744,30 @@ func (m Model) renderScoreBreakdown() string {
 
 // renderGameControls shows keyboard controls
 func (m Model) renderGameControls() string {
-	controls := "1-8: Select | Space: Toggle for play | Enter: Play hand | D: Discard | Q: Quit"
+	// Base controls
+	controls := "1-8: Select | Space: Toggle for play | Enter: Play hand | D: Discard | S: Sort | Q: Quit"
 
 	style := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("250")).
 		Italic(true)
 
-	return style.Render(controls)
+	// Show current sort mode
+	var sortModeText string
+	switch m.sortMode {
+	case SortBySuit:
+		sortModeText = "Sort: SUIT (♣→♦→♥→♠)"
+	case SortByRank:
+		sortModeText = "Sort: RANK (A→K)"
+	case SortNone:
+		sortModeText = "Sort: NONE"
+	}
+
+	sortStyle := lipgloss.NewStyle().
+		Foreground(neonColors.Cyan).
+		Bold(true)
+
+	// Combine controls and sort mode indicator
+	return style.Render(controls) + "\n" + sortStyle.Render(sortModeText)
 }
 
 // Phase 2: New game state screens

@@ -459,3 +459,59 @@ func (c Card) Copy() Card {
 		Played:      c.Played,
 	}
 }
+
+// SortCardsBySuit sorts cards by suit (Clubs, Diamonds, Hearts, Spades), then by rank within each suit
+func SortCardsBySuit(cards []Card) []Card {
+	sorted := make([]Card, len(cards))
+	copy(sorted, cards)
+
+	// Sort using a simple bubble sort for clarity
+	for i := 0; i < len(sorted)-1; i++ {
+		for j := 0; j < len(sorted)-i-1; j++ {
+			// Compare by suit first
+			if sorted[j].Suit > sorted[j+1].Suit {
+				sorted[j], sorted[j+1] = sorted[j+1], sorted[j]
+			} else if sorted[j].Suit == sorted[j+1].Suit {
+				// Within same suit, sort by rank
+				if sorted[j].Rank > sorted[j+1].Rank {
+					sorted[j], sorted[j+1] = sorted[j+1], sorted[j]
+				}
+			}
+		}
+	}
+
+	return sorted
+}
+
+// SortCardsByRank sorts cards by rank (A, K, Q, J, 10, ..., 2), then by suit within each rank
+func SortCardsByRank(cards []Card) []Card {
+	sorted := make([]Card, len(cards))
+	copy(sorted, cards)
+
+	// Sort using a simple bubble sort for clarity
+	for i := 0; i < len(sorted)-1; i++ {
+		for j := 0; j < len(sorted)-i-1; j++ {
+			// Compare by rank first (descending - high cards first)
+			// Special case: Ace (1) should be treated as highest
+			rankJ := sorted[j].Rank
+			rankJ1 := sorted[j+1].Rank
+			if rankJ == Ace {
+				rankJ = King + 1 // Treat Ace as higher than King
+			}
+			if rankJ1 == Ace {
+				rankJ1 = King + 1
+			}
+
+			if rankJ < rankJ1 {
+				sorted[j], sorted[j+1] = sorted[j+1], sorted[j]
+			} else if rankJ == rankJ1 {
+				// Within same rank, sort by suit
+				if sorted[j].Suit > sorted[j+1].Suit {
+					sorted[j], sorted[j+1] = sorted[j+1], sorted[j]
+				}
+			}
+		}
+	}
+
+	return sorted
+}
