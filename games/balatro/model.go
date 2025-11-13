@@ -96,6 +96,7 @@ func (m *Model) newGame() {
 	// Initialize game state
 	m.playedCards = make([]Card, 0)
 	m.selectedCardIndex = 0
+	m.selectedJokerIndex = -1
 	m.lastScore = ScoreCalculation{}
 	m.currentHandInfo = HandInfo{}
 
@@ -205,6 +206,9 @@ func (m *Model) playHand() {
 		m.deck = m.deck[cardsNeeded:]
 	}
 
+	// Apply current sort mode to hand
+	m.applySorting()
+
 	// Update state
 	m.playedCards = make([]Card, 0)
 	m.selectedCardIndex = 0
@@ -256,6 +260,9 @@ func (m *Model) discardCards() {
 		m.hand = append(m.hand, m.deck[:cardsNeeded]...)
 		m.deck = m.deck[cardsNeeded:]
 	}
+
+	// Apply current sort mode to hand
+	m.applySorting()
 
 	// Update state
 	m.roundState.Discard()

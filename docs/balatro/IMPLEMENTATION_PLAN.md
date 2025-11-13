@@ -1014,6 +1014,24 @@ Instant effects on cards:
 
 ---
 
+## External Resources
+
+**NEW!** Complete reference document with all game data:
+- **`docs/balatro/REFERENCES.md`** - Comprehensive resource guide
+  - Links to Balatro Calculator (150 joker definitions!)
+  - All card types, effects, and mechanics
+  - Boss blind effects
+  - Tarot, Planet, and Spectral cards
+  - Implementation roadmap
+
+**Balatro Calculator Repository**: https://github.com/EFHIII/balatro-calculator
+- 150 joker definitions with full mechanics
+- Complete scoring engine implementation
+- Card enhancement/edition/seal formulas
+- Use for reference when implementing new jokers!
+
+---
+
 ## Next Steps
 
 ### Immediate Priorities (Next Session)

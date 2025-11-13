@@ -280,6 +280,12 @@ func (m Model) renderGameView() string {
 		sections = append(sections, "")
 	}
 
+	// Selected joker detail panel
+	if m.selectedJokerIndex >= 0 && m.selectedJokerIndex < len(m.jokers) {
+		sections = append(sections, m.renderJokerDetail(m.jokers[m.selectedJokerIndex]))
+		sections = append(sections, "")
+	}
+
 	// Current hand info (always reserve space to prevent UI jumping)
 	sections = append(sections, m.renderCurrentHandInfo())
 	sections = append(sections, "")
@@ -444,8 +450,8 @@ func (m Model) renderJokerCard(joker Joker) string {
 	cardStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(joker.Rarity.Color()).
-		Width(18).
-		Height(4).
+		Width(20).
+		Height(6).
 		Padding(0, 1).
 		MarginRight(1)
 
@@ -459,15 +465,22 @@ func (m Model) renderJokerCard(joker Joker) string {
 	content.WriteString(nameStyle.Render(joker.Name))
 	content.WriteString("\n")
 
-	// Description (wrap if needed)
-	desc := joker.Description
-	if len(desc) > 18 {
-		// Truncate with ellipsis
-		desc = desc[:15] + "..."
-	}
+	// Description (wrap to 2 lines, ~20 chars per line)
 	descStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("250"))
-	content.WriteString(descStyle.Render(desc))
+	wrappedDesc := wordWrap(joker.Description, 20)
+	// Limit to first 2 lines
+	descLines := strings.Split(wrappedDesc, "\n")
+	if len(descLines) > 2 {
+		descLines = descLines[:2]
+		// Add ellipsis to last line if truncated
+		if len(descLines[1]) > 17 {
+			descLines[1] = descLines[1][:17] + "..."
+		} else {
+			descLines[1] = descLines[1] + "..."
+		}
+	}
+	content.WriteString(descStyle.Render(strings.Join(descLines, "\n")))
 
 	return cardStyle.Render(content.String())
 }
@@ -505,14 +518,22 @@ func (m Model) renderShopJoker(joker Joker, selected bool, index int) string {
 	content.WriteString(nameStyle.Render(joker.Name))
 	content.WriteString("\n")
 
-	// Description
-	desc := joker.Description
-	if len(desc) > 22 {
-		desc = desc[:19] + "..."
-	}
+	// Description (wrap to 2 lines, ~22 chars per line)
 	descStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("250"))
-	content.WriteString(descStyle.Render(desc))
+	wrappedDesc := wordWrap(joker.Description, 22)
+	// Limit to first 2 lines
+	descLines := strings.Split(wrappedDesc, "\n")
+	if len(descLines) > 2 {
+		descLines = descLines[:2]
+		// Add ellipsis to last line if truncated
+		if len(descLines[1]) > 19 {
+			descLines[1] = descLines[1][:19] + "..."
+		} else {
+			descLines[1] = descLines[1] + "..."
+		}
+	}
+	content.WriteString(descStyle.Render(strings.Join(descLines, "\n")))
 	content.WriteString("\n")
 
 	// Cost
@@ -684,6 +705,80 @@ func (m Model) renderCardDetail(card Card) string {
 		Render(panel)
 }
 
+// renderJokerDetail renders detailed info about a joker (centered)
+func (m Model) renderJokerDetail(joker Joker) string {
+	var lines []string
+
+	// Title: Joker name with rarity color
+	titleStyle := lipgloss.NewStyle().
+		Foreground(joker.Rarity.Color()).
+		Bold(true)
+	lines = append(lines, titleStyle.Render(joker.Name))
+
+	// Rarity
+	rarityStyle := lipgloss.NewStyle().
+		Foreground(joker.Rarity.Color())
+	lines = append(lines, rarityStyle.Render(fmt.Sprintf("Rarity: %s", joker.Rarity.String())))
+
+	// Description (full text, wrapped)
+	lines = append(lines, "")
+	descStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("252"))
+	// Word wrap the description to fit in the panel (max width ~50 chars)
+	wrappedDesc := wordWrap(joker.Description, 50)
+	lines = append(lines, descStyle.Render(wrappedDesc))
+
+	// Cost
+	lines = append(lines, "")
+	costStyle := lipgloss.NewStyle().
+		Foreground(neonColors.Gold).
+		Bold(true)
+	lines = append(lines, costStyle.Render(fmt.Sprintf("Cost: $%d", joker.GetCost())))
+
+	content := strings.Join(lines, "\n")
+
+	panel := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(joker.Rarity.Color()).
+		Padding(1, 2).
+		Width(54).
+		Render(content)
+
+	// Center the panel
+	return lipgloss.NewStyle().
+		Width(m.width).
+		Align(lipgloss.Center).
+		Render(panel)
+}
+
+// wordWrap wraps text to the specified width
+func wordWrap(text string, width int) string {
+	if len(text) <= width {
+		return text
+	}
+
+	var lines []string
+	words := strings.Fields(text)
+	currentLine := ""
+
+	for _, word := range words {
+		if currentLine == "" {
+			currentLine = word
+		} else if len(currentLine)+1+len(word) <= width {
+			currentLine += " " + word
+		} else {
+			lines = append(lines, currentLine)
+			currentLine = word
+		}
+	}
+
+	if currentLine != "" {
+		lines = append(lines, currentLine)
+	}
+
+	return strings.Join(lines, "\n")
+}
+
 // renderCurrentHandInfo shows info about the currently selected cards for play (centered)
 func (m Model) renderCurrentHandInfo() string {
 	var info string
@@ -753,7 +848,7 @@ func (m Model) renderScoreBreakdown() string {
 // renderGameControls shows keyboard controls
 func (m Model) renderGameControls() string {
 	// Base controls
-	controls := "1-8: Select | Space: Toggle for play | Enter: Play hand | D: Discard | S: Sort | Q: Quit"
+	controls := "1-8: Select Card | Space: Toggle | Enter: Play | D: Discard | S: Sort | J: View Joker | Q: Quit"
 
 	style := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("250")).

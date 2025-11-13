@@ -213,10 +213,16 @@ When complete, you should be able to:
 
 ## 📚 Reference Documents
 
-- `docs/IMPLEMENTATION_PLAN.md` - Lines 487-659 (Phase 3 details)
-- `docs/REFERENCES.md` - Joker effects reference from Balatro
-- `cards.go` - Enhancement and Edition enums (already defined!)
-- `scoring.go` - Current scoring logic (will be extended)
+- `docs/balatro/IMPLEMENTATION_PLAN.md` - Complete implementation roadmap
+- `docs/balatro/REFERENCES.md` - **NEW! External resources & data**
+  - **Balatro Calculator**: https://github.com/EFHIII/balatro-calculator
+  - **150 Joker definitions** with full mechanics
+  - **All card types**: Enhancements, Editions, Seals, Tarots, Planets, Spectrals
+  - **Boss Blind effects** reference
+  - **Scoring mechanics** documentation
+- `games/balatro/cards.go` - Enhancement and Edition enums (already defined!)
+- `games/balatro/scoring.go` - Current scoring logic (will be extended)
+- `games/balatro/jokers.go` - Current joker implementations (5 done, 145 to go!)
 
 ---
 

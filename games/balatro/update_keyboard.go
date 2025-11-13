@@ -176,6 +176,19 @@ func (m Model) handleSelectCardsKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.statusMsg = "Sort: NONE (draw order)"
 		}
 		return m, nil
+
+	// J to cycle through jokers for detail view
+	case "j", "J":
+		if len(m.jokers) > 0 {
+			m.selectedJokerIndex++
+			if m.selectedJokerIndex >= len(m.jokers) {
+				m.selectedJokerIndex = -1 // Deselect
+				m.statusMsg = "Joker detail view closed"
+			} else {
+				m.statusMsg = fmt.Sprintf("Viewing joker %d/%d - Press J again to cycle", m.selectedJokerIndex+1, len(m.jokers))
+			}
+		}
+		return m, nil
 	}
 
 	return m, nil
@@ -283,6 +296,9 @@ func (m Model) handleShopKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.hand = make([]Card, 8)
 		copy(m.hand, m.deck[:8])
 		m.deck = m.deck[8:]
+
+		// Apply current sort mode to new hand
+		m.applySorting()
 
 		// Reset played cards
 		m.playedCards = make([]Card, 0)
