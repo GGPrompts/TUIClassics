@@ -42,6 +42,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // handleGameUpdate delegates messages to the current game
 // and handles returning to menu if the game quits
 func (m Model) handleGameUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Handle animation tick to keep landing page animation alive
+	// This ensures the animation doesn't freeze when we return to menu
+	if _, ok := msg.(AnimationTickMsg); ok {
+		if m.landingPage != nil {
+			m.landingPage.Update()
+		}
+		// Continue animation loop AND delegate to game
+		updatedGame, gameCmd := m.currentGame.Update(msg)
+		m.currentGame = updatedGame
+		return m, tea.Batch(animationTick(), gameCmd)
+	}
+
 	// Check for Esc key to return to menu
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		if keyMsg.String() == "esc" {
